@@ -1,0 +1,244 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jan 24 16:30:37 2022
+
+@author: barwu
+"""
+from uproot import concatenate, exceptions
+from ROOT import std, TFile, TTree
+import numpy as np
+from glob import glob
+import torch
+from muonEffModel import muonEffModel
+from os.path import splitext, basename, exists
+from scipy.spatial.transform import Rotation as R
+from scipy.interpolate import interp1d
+#from ROOT import TGraph
+from array import array
+# The code is currently quite slow, so it uses multiprocessing to speed things up
+from multiprocessing import Pool
+
+# SET NUMBER OF PROCESSORS HERE
+NUM_PROCS=50
+# ND coordinate offset.
+offset=[0.,5.,411.]
+# Average neutrino decay position in beam coordinates as a function of vertex x (from Luke):
+# Will be used to set the decay position event-by-event.
+OffAxisPoints=array('f', [-2, 0.5, 3, 5.5, 8, 10.5, 13, 15.5, 18, 20.5, 23, 25.5, 28, 30.5])
+meanPDPZ=array('f', [93.6072, 93.362, 90.346, 85.6266, 81.1443, 76.6664, 73.0865, 69.8348, 67.5822, 65.005, 62.4821,
+                     60.8336, 59.1433, 57.7352]) #why are these discreet data sets?
+#gDecayZ=TGraph(14, OffAxisPoints, meanPDPZ)
+gDecayZ=interp1d(OffAxisPoints,meanPDPZ,fill_value='extrapolate')
+# These are used to translate between the near detector coordinate system and the neutrino beamline coordinate system.
+# We use this to calculate the average neutrino direction, assuming the mean neutrino production point as a function
+# of neutrino interaction x, which is given in the arrays above.
+beamRefDetCoord=[0.0, 0.05387, 6.66] #spherical coords, radians
+detRefBeamCoord=[0, 0, 562.1179] #xyz coords of reference detector position
+beamLineRotation=-0.101
+
+# Fiducial volume definition
+def isFV(x, y, z):
+    inDeadRegion=False
+    for i in [-3, -2, -1, 0, 1, 2, 3]:
+        cathode_center=i*102.1
+        if (x>cathode_center-0.75) and (x<cathode_center+0.75):
+            inDeadRegion=True
+        module_boundary=i*102.1+51.05
+        if (i<=2) and (x>module_boundary-1.3) and (x<module_boundary+1.3):
+            inDeadRegion=True
+    for i in [1, 2, 3, 4]:
+        module_boundary=i*101.8-0.6
+        if (z>module_boundary-1.7) and (z<module_boundary+1.7):
+            inDeadRegion=True
+    return (abs(x)<300) and (abs(y)<100) and (z>50) and (z<350) and (not inDeadRegion)
+
+# Vectorize fiducial volume function
+isFV_vec=np.vectorize(isFV)
+# Simple muon containment cut
+def isContained(x, y, z):
+    if abs(x)>350:
+        return False
+    if abs(y)>150:
+        return False
+    if z<0 or z>500:
+        return False
+    return True
+
+TreeVars=["ND_OffAxis_Sim_mu_start_v_xyz_LAr", "ND_OffAxis_Sim_mu_start_p_xyz_LAr", "hadron_throw_result_LAr"]
+
+# This is the function where everything happens
+# Analyse one file at a time, otherwise memory explodes!
+# f is only 1 file, each file get assigned to a different cpu
+def processFiles(f):
+    output="/storage/shared/barwu/10thTry/FDEff/"+splitext(basename(f))[0]+"_Eff.root"
+    # if exists(output)==True:
+    # #    print("testing")
+    #     return None
+    try:
+        # Get effTree TTree
+        effTree=concatenate("{0}:effTreeND".format(f), TreeVars, library="np")
+    #leave except condition specification so that code crashes when there is another exception condition
+    except exceptions.KeyInFileError:
+        print("Couldn't find effTree TTree in file {0}. Skipping.".format(f))
+        return None
+        #continue
+    # Get tree with x, y and phi of geometric efficiency throws.
+    throwsFD=concatenate("{0}:ThrowsFD".format(f), ['throwVtxY', 'throwVtxZ', 'throwRot'], library="np")
+    #print(f)
+
+    effs=std.vector(std.vector('double'))()
+    effs_tracker=std.vector(std.vector('double'))()
+    effs_contained=std.vector(std.vector('double'))()
+    effs_combined=std.vector(std.vector('double'))()  
+
+    tf=TFile.Open(output,"RECREATE")
+    tree=TTree("event_data", "event_data")
+    tree.Branch("hadron_selected_eff", effs)
+    tree.Branch("muon_tracker_eff", effs_tracker)
+    tree.Branch("muon_contained_eff", effs_contained)
+    tree.Branch("combined_eff", effs_combined)
+
+    # Event loop
+    for i_event in range(len(effTree['hadron_throw_result_LAr'])):
+        event=effTree['hadron_throw_result_LAr'][i_event]
+        #print("i_event=",i_event)
+        #if i_event==10: break #use when debugging
+        effs.clear() #remove past events' nd array efficiency data
+        effs_tracker.clear()
+        effs_contained.clear()
+        effs_combined.clear()
+        for det_pos in range(len(event)):
+            #print("det_pos=",det_pos)
+
+            effs.push_back(std.vector('double')())
+            effs_tracker.push_back(std.vector('double')())
+            effs_contained.push_back(std.vector('double')())
+            effs_combined.push_back(std.vector('double')())
+            for vtx_pos in range(len(event[det_pos])):
+                #print("vtx_pos=",vtx_pos)
+
+                # Accumulators for efficiency calculation
+                thisEff=0. # Hadronic efficiency
+                thisEff_tracker=0. # Tracker-match efficiency
+                thisEff_contained=0. # Contained muon efficiency
+                thisEff_combined=0. # Combined efficiency
+                
+                this_vtx_x=effTree["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][0]
+                this_vtx_y=effTree["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][1]
+                this_vtx_z=effTree["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][2]
+                this_p=effTree["ND_OffAxis_Sim_mu_start_p_xyz_LAr"][i_event][det_pos][vtx_pos]
+
+                # Loop through the hadronic geometric efficiency throw results. Each bitfield corresponds to 64 throws.
+                # There are 64*64=4096 throws in total. Hadronic veto bits are grouped into 64, to prevent processing
+                # overload for the neural network.
+                for i_bitfield, bitfield in enumerate(event[det_pos][vtx_pos][0][0]):
+                    bitfield=np.array([bitfield], dtype=np.uint64) # Converts the 64 bit integer into "bit" array
+                    bitfield=np.unpackbits(np.array(bitfield, dtype='>i8').view(np.uint8))
+                    #unpackbits converts a 256-basevalue into an array of binary integers
+                    bitfieldTemp=np.copy(bitfield)
+                    # Annoyingly, the array is backwards. Invert array order...
+                    for j_bitfield in range(len(bitfield)): bitfield[-(1+j_bitfield)]=bitfieldTemp[j_bitfield]
+                    # Calculate hadron efficiency. Sum the number of throws where the hadronic system was contained
+                    # (bit in bitfield is 1) and the throw was in the fiducial volume.
+                    thisEff+=np.sum(bitfield)
+    
+                    # Get variables needed to evaluate muon neural network for each throw.
+                    # x is not randomized. This is a convoluted way of repeating vtx_x the correct number of times
+                    throw_x=[this_vtx_x]*len(throwsFD["throwVtxZ"][0][i_bitfield*64:(i_bitfield+1)*64])
+                    # Get y for each random throw.
+                    throw_y=throwsFD["throwVtxY"][0][i_bitfield*64:(i_bitfield+1)*64]-offset[1]
+                    # Get z for each random throw
+                    throw_z=throwsFD["throwVtxZ"][0][i_bitfield*64:(i_bitfield+1)*64]-offset[2]
+                    # Get phi for each random throw
+                    throw_phi=throwsFD["throwRot"][0][i_bitfield*64:(i_bitfield+1)*64]
+
+                    # Use vertex to determine mean decay point
+                    # Get z-coordinate of neutrino production point *in beamline coordinates*
+                    decayZbeamCoord=gDecayZ((this_vtx_x/100-detRefBeamCoord[0])*100) # in cm
+                    # Convert neutrino production point to *near detector coordinates*
+                    decayZdetCoord=(-1*detRefBeamCoord[2]*100+decayZbeamCoord)*np.cos(beamLineRotation)\
+                    *(-1*detRefBeamCoord[1]*100*np.sin(beamLineRotation))+beamRefDetCoord[2]*100
+                    decayYdetCoord=(-1*detRefBeamCoord[1]*100*np.cos(beamLineRotation))+(-1*detRefBeamCoord[2]\
+                    *100+decayZbeamCoord)*np.sin(beamLineRotation)+beamRefDetCoord[1]*100
+                    decayXdetCoord=-1*detRefBeamCoord[0]*100+beamRefDetCoord[0]*100
+                    # Vector from neutrino production point to original event vertex
+                    decayToVertex=[this_vtx_x-decayXdetCoord,this_vtx_y-decayYdetCoord,this_vtx_z-decayZdetCoord]
+                    # Vector from neutrino production point to randomly thrown vertex.
+                    decayToTranslated=[[throw_x[i]-decayXdetCoord, throw_y[i]-decayYdetCoord, throw_z[i]\
+                                        -decayZdetCoord] for i in range(len(throw_x))]
+    
+                    magDecayToVertex=np.sqrt(np.sum(np.square(decayToVertex)))
+                    magDecayToTranslated=np.sqrt(np.sum(np.square(decayToTranslated), axis=1))
+                    translationAngle=np.dot(decayToTranslated, decayToVertex)
+                    translationAngle=np.divide(translationAngle, np.multiply(magDecayToVertex,magDecayToTranslated));
+                    #for angleval in translationAngle: if angleval<=-1 or angleval>=1: print(i_event, angleval)
+                    translationAngle=np.arccos(translationAngle);
+                    translationAxis=np.cross(decayToTranslated, decayToVertex)
+                    translationAxis=[ thisV/np.linalg.norm(thisV) for thisV in translationAxis]
+                    translation_rot_vec=np.multiply(translationAxis, translationAngle[...,None])
+                    decayToTranslated=[thisV/np.linalg.norm(thisV) for thisV in decayToTranslated]
+                    phi_rot_vec=np.multiply(decayToTranslated, throw_phi[...,None])
+    
+                    # Get rotation matrices due to:
+                    # Vertex translation (which "rotates" the average neutrino direction)
+                    translation_rot=R.from_rotvec(translation_rot_vec)
+                    # Random phi rotation around average neutrino direction
+                    phi_rot=R.from_rotvec(phi_rot_vec)
+                    # Rotate momentum
+                    this_p=translation_rot.apply(this_p)
+                    this_p=phi_rot.apply(this_p)
+    
+                    # Features contains randomized momentum and vertex, to be used in neural network.
+                    features=np.column_stack((this_p[:,0], this_p[:,1], this_p[:,2], throw_x, throw_y, throw_z))
+                    features=torch.as_tensor(features).type(torch.FloatTensor) # Convert to Pytorch tensor
+                    with torch.no_grad(): # Evaluate neural network
+                        netOut=net(features)
+                        netOut=torch.nn.functional.softmax(netOut).detach().numpy()
+    
+                    # Get contained probability for 64 throws
+                    nnContained=np.array(netOut[:,0], dtype=float)
+                    # Get tracker probability for 64 throws
+                    nnTracker=np.array(netOut[:,1], dtype=float)
+                    # MUON CONTAINED AND HADRON CONTAINED, throw by throw
+                    combinedEfficiencyContained=np.multiply(nnContained, bitfield)
+                    # OR: MUON TRACKER AND HADRON CONTAINED, throw by throw
+                    combinedEfficiencyTracker=np.multiply(nnTracker, bitfield)
+                    # Combined hadron containment and muon selection efficiency, throw by throw
+                    combinedEfficiency=np.add(combinedEfficiencyContained, combinedEfficiencyTracker)
+    
+                    # Count only throws which were in the fiducial volume and add them to the efficiency accumulators
+                    thisEff_tracker+=np.sum(nnTracker)
+                    thisEff_contained+=np.sum(nnContained)
+                    thisEff_combined+=np.sum(combinedEfficiency)
+                
+                # After looping through all throws, divide by number of throws to get average efficiency.
+                #print(thisEff/4096)
+                effs.back().push_back(thisEff/4096)
+                effs_tracker.back().push_back(thisEff_tracker/4096)
+                effs_contained.back().push_back(thisEff_contained/4096)
+                effs_combined.back().push_back(thisEff_combined/4096)
+            #print("still running")
+
+        tree.Fill()
+    tree.Write()
+    tf.Close()
+
+if __name__=="__main__":
+    net=muonEffModel()
+    net.load_state_dict(torch.load("/home/barwu/repos/MuonEffNN/8thTry/muonEff30.nn",map_location=torch.device('cpu')))
+    net.eval()
+    hadron_file="/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_99?.root"
+    allFiles=glob(hadron_file)
+    #if len(allFiles)<NUM_PROCS:
+        #print("Fewer files than processes, setting NUM_PROC to {0}".format(len(allFiles)))
+        #NUM_PROCS=len(allFiles)
+    #filesPerProc=int(np.ceil(float(len(allFiles))/NUM_PROCS))
+    #print(filesPerProc, NUM_PROCS)
+
+    pool=Pool(NUM_PROCS)
+    pool.map(processFiles, allFiles)
+        #don't use multiprocessing for debugging
+    #for file in allFiles:
+        #processFiles(file)
+    #processFiles("/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_999.root")
