@@ -78,7 +78,6 @@ void populate_histograms(char* eff,char* caf,TH1D* hists[2][10],int j)
   for (int i=0;i<nentries2;i++) {
     detections->GetEntry(i);
     event_data->GetEntry(i);
-    cout<<i<<endl;
     for (int lar_pos=0;lar_pos<hadr_eff->size();lar_pos++) {
       for (int vtx_pos=0;vtx_pos<hadr_eff->at(j).size();vtx_pos++) {
         //calculation for the muon-selected cut
