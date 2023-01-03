@@ -30,8 +30,8 @@ vector<vector<double>>* hadr_eff=nullptr;
 vector<vector<double>>* comb_eff=nullptr;
 Para pr[]=
 {
-  {"ND_E_vis_true",0,8,&ND_E_vis_true},
-  {"ND_Gen_numu_E",0,8,&ND_Gen_numu_E}
+  {"ND_E_vis_true",0,19,&ND_E_vis_true},
+  {"ND_Gen_numu_E",0,19,&ND_Gen_numu_E}
 };
 
 struct sel_type
@@ -66,13 +66,13 @@ void populate_histograms(char* eff,char* caf,TH1D* hists[2][10],int j)
     event_data->SetBranchAddress(item.eff_name, &(item.eff_value));
     hadr_eff=item.eff_value;
   }
-  //energy is in gev
+  //energy is in GeV
   detections->SetBranchAddress("ND_E_vis_true", &ND_E_vis_true); //true energy
   detections->SetBranchAddress("ND_Gen_numu_E", &ND_Gen_numu_E); //true neutrino energy
 
-  Long64_t nentries1=detections->GetEntries(); //no fv filter for fd //cc events already filtered
+  Long64_t nentries1=detections->GetEntries(); //no FV filter for FD //CC events already filtered
   Long64_t nentries2=event_data->GetEntries();
-  cout<<nentries2;
+  //cout<<nentries2;
   if (nentries1!=nentries2) {cout<<"the efficiency file #"<<j<<" has "<<nentries2
   <<" events, and the caf file #"<<j<<" has "<<nentries1<<" events."<<endl;}
   for (int i=0;i<nentries2;i++) {
@@ -83,7 +83,7 @@ void populate_histograms(char* eff,char* caf,TH1D* hists[2][10],int j)
         //calculation for the muon-selected cut
         //muon_sel_eff[lar_pos][vtx_pos]=muon_cont_eff[lar_pos][vtx_pos]+muon_tra_eff[lar_pos][vtx_pos];
         //if (muon_sel_eff<0.0001) {cout<<"event "<<i<<" of file #"<<j<<" has small selected efficiency"<<endl;}
-	
+
 	      int n=0;
         for (auto item:pr) {
           for (auto sel:br) {
@@ -93,7 +93,7 @@ void populate_histograms(char* eff,char* caf,TH1D* hists[2][10],int j)
             hist1->Fill(*item.field_value);
             vector<vector<double>> eff_value2=*(hadr_eff);
             double geo_eff=eff_value2[lar_pos][vtx_pos];
-            //cout<<"geoeff="<<geo_eff<<endl;
+            cout<<"geoeff="<<geo_eff<<endl;
             if (geo_eff<=0.001) {
               hist2->Fill(*item.field_value,0.);
             } else {
@@ -143,18 +143,19 @@ void FD_energy_histograms()
     }
   }
 
-  gStyle->SetOptStat(000000000);
+  //gStyle->SetOptStat(000000000);
+  gStyle->SetOptStat(111111111);
   TCanvas *c=new TCanvas("c","Energy Distributions",1800,1000);
   c->Divide(2,2);
   int n=0;
-  for(int i=0;i<2;i++)
+  for(int i=1;i<=2;i++)
   {
-    Para item=pr[i];
+    Para item=pr[i-1];
     const char *fd=item.field;
     for(auto sel:br)
     {
       const char *dt=sel.sel_name;
-      c->cd(2*i+1);
+      c->cd(2*i-1);
       TH1D *hist2=histograms[1][n];
       hist2->SetLineColor(kAzure);
       hist2->Draw("samehistS");
@@ -175,16 +176,16 @@ void FD_energy_histograms()
       leg->AddEntry(hist2, "geo corrected distribution");
       leg->Draw();
 
-      c->cd(2*i+2);
+      c->cd(2*i);
       TH1D *rplot=(TH1D*)hist2->Clone();
       rplot->Divide(hist1);
       rplot->SetTitle(Form("%s: %s ratio plot",fd,dt));
-      rplot->SetAxisRange(0.,3.,"Y");
+      rplot->SetAxisRange(0.,5.,"Y");
       rplot->SetLineColor(kBlue);
       rplot->Draw("hist");
       n++;
     }
     c->Update();
-    //c->SaveAs("10thTry/true_energy_distributions.png");
   }
+  //c->SaveAs("/home/barwu/repos/MuonEffNN/10thTry/FD_energy_hists_vtx_edges4.png");
 }

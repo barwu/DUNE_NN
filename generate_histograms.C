@@ -25,16 +25,16 @@ void generate_histograms()
 
 void h12ascii (TH1* h)
 {
-   FILE *f=fopen(Form("csv_files/%s.csv", h->GetName()), "w");
-   Int_t n=h->GetNbinsX();
-   
-   fprintf(f, "bin,content\n");
-   for (Int_t i=1; i<=n; i++) {
-      fprintf(f, "%g,%g\n",
-             h->GetBinLowEdge(i)+h->GetBinWidth(i)/2,
-             h->GetBinContent(i));
-   }
-   fclose(f);
+  FILE *f=fopen(Form("csv_files/%s.csv", h->GetName()), "w");
+  Int_t n=h->GetNbinsX();
+
+  fprintf(f, "bin,content\n");
+  for (Int_t i=1; i<=n; i++) {
+    fprintf(f, "%g,%g\n",
+    h->GetBinLowEdge(i)+h->GetBinWidth(i)/2,
+    h->GetBinContent(i));
+  }
+  fclose(f);
 }
 
 int run(int first, int last)

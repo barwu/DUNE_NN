@@ -59,13 +59,13 @@ Para pr[]=
 vector<Sel_type> br=
 {
   Sel_type("muon_contained", "muon_contained_eff", false, &muon_cont, &muon_cont_eff),
-  Sel_type("muon_tracker", "muon_tracker_eff",false, &muon_tra, &muon_tra_eff),
-  Sel_type("muon_selected","muon_sel_eff", true, &muon_sel, &muon_sel_eff),
+  Sel_type("muon_tracker", "muon_tracker_eff", false, &muon_tra, &muon_tra_eff),
+  Sel_type("muon_selected", "muon_sel_eff", true, &muon_sel, &muon_sel_eff),
   Sel_type("hadron_selected", "hadron_selected_eff", false, &hadr, &hadr_eff ),
-  Sel_type("combined","combined_eff",false,&comb, &comb_eff)
+  Sel_type("combined", "combined_eff", false, &comb, &comb_eff)
 };
 
-void populate_histograms(char* eff,char* CAF, vector<TH1D*>hists1, vector<TH1D*>hists2,vector<TH1D*>hists3)
+void populate_histograms(char* eff,char* CAF,vector<TH1D*>hists1,vector<TH1D*>hists2,vector<TH1D*>hists3)
 {
   TFile eff_file(eff);
   TFile caf_file(CAF);
@@ -104,7 +104,7 @@ void populate_histograms(char* eff,char* CAF, vector<TH1D*>hists1, vector<TH1D*>
     muon_sel=muon_cont+muon_tra;
     muon_sel_eff=muon_cont_eff+muon_tra_eff;
     if (muon_sel!=0&&muon_sel!=1) {
-      cout<<"bad val for muon-selected check!"<<muon_sel<<endl;
+      cout<<"bad val for muon-selected check! "<<muon_sel<<endl;
       continue;
     }
 
@@ -133,6 +133,7 @@ void populate_histograms(char* eff,char* CAF, vector<TH1D*>hists1, vector<TH1D*>
 
 void new_hist_fill()
 {
+  gROOT->SetBatch(kTRUE);
   char eff[99];
   char caf[99];
   vector<TH1D*> histograms1, histograms2, histograms3;
@@ -150,12 +151,14 @@ void new_hist_fill()
     }
   }
 
-  for (int j=0; j<=9999; j++)
+  for (int j=0; j<=29999; j++)
   {
     memset(eff, 0, 99); // clear array each time
     memset(caf, 0, 99);
-    sprintf(eff,"/storage/shared/barwu/9thTry/eff_trees/FHC.100%04d.CAF_MuonEff.root",j);
-    sprintf(caf,"/storage/shared/cvilela/CAF/ND_v7/0%01d/FHC.100%04d.CAF.root",j/1000,j);
+    sprintf(eff,"/storage/shared/barwu/10thTry/combined1/FHC.10%05d.CAF_Eff.root",j);
+    sprintf(caf,"/storage/shared/wshi/CAFs/NDFHC_PRISM/%02d/FHC.10%05d.CAF.root",j/1000,j);
+    //sprintf(eff,"/storage/shared/barwu/9thTry/eff_trees/FHC.100%04d.CAF_MuonEff.root",j);
+    //sprintf(caf,"/storage/shared/cvilela/CAF/ND_v7/0%01d/FHC.100%04d.CAF.root",j/1000,j);
     if(access(eff, 0)==0)
     {
       populate_histograms(eff,caf,histograms1,histograms2,histograms3);
@@ -165,6 +168,7 @@ void new_hist_fill()
     }
   }
 
+  gROOT->SetBatch(kFALSE);
   gStyle->SetOptStat(000000000);
   //gStyle->SetOptStat(111111111);
   TCanvas *c=new TCanvas("c", "c", 1800, 1000);
@@ -207,7 +211,7 @@ void new_hist_fill()
       n++;
     }
   }
-  c->SaveAs("images/hists_all.png");
+  c->SaveAs("images/PRISM_hists_all.png");
 
   TCanvas *cs[5];
   n=0;
@@ -251,7 +255,7 @@ void new_hist_fill()
       n++;
     }
     cs[i]->Update();
-    cs[i]->SaveAs(Form("images/hists_%s.png",dt));
+    cs[i]->SaveAs(Form("images/PRISM_hists_%s.png",dt));
     i++;
   }
 }

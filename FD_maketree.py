@@ -123,7 +123,7 @@ def processFiles(f):
                 thisEff_tracker=0. # Tracker-match efficiency
                 thisEff_contained=0. # Contained muon efficiency
                 thisEff_combined=0. # Combined efficiency
-                
+
                 this_vtx_x=effTree["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][0]
                 this_vtx_y=effTree["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][1]
                 this_vtx_z=effTree["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][2]
@@ -142,7 +142,7 @@ def processFiles(f):
                     # Calculate hadron efficiency. Sum the number of throws where the hadronic system was contained
                     # (bit in bitfield is 1) and the throw was in the fiducial volume.
                     thisEff+=np.sum(bitfield)
-    
+
                     # Get variables needed to evaluate muon neural network for each throw.
                     # x is not randomized. This is a convoluted way of repeating vtx_x the correct number of times
                     throw_x=[this_vtx_x]*len(throwsFD["throwVtxZ"][0][i_bitfield*64:(i_bitfield+1)*64])
@@ -167,7 +167,7 @@ def processFiles(f):
                     # Vector from neutrino production point to randomly thrown vertex.
                     decayToTranslated=[[throw_x[i]-decayXdetCoord, throw_y[i]-decayYdetCoord, throw_z[i]\
                                         -decayZdetCoord] for i in range(len(throw_x))]
-    
+
                     magDecayToVertex=np.sqrt(np.sum(np.square(decayToVertex)))
                     magDecayToTranslated=np.sqrt(np.sum(np.square(decayToTranslated), axis=1))
                     translationAngle=np.dot(decayToTranslated, decayToVertex)
@@ -179,7 +179,7 @@ def processFiles(f):
                     translation_rot_vec=np.multiply(translationAxis, translationAngle[...,None])
                     decayToTranslated=[thisV/np.linalg.norm(thisV) for thisV in decayToTranslated]
                     phi_rot_vec=np.multiply(decayToTranslated, throw_phi[...,None])
-    
+
                     # Get rotation matrices due to:
                     # Vertex translation (which "rotates" the average neutrino direction)
                     translation_rot=R.from_rotvec(translation_rot_vec)
@@ -188,14 +188,14 @@ def processFiles(f):
                     # Rotate momentum
                     this_p=translation_rot.apply(this_p)
                     this_p=phi_rot.apply(this_p)
-    
+
                     # Features contains randomized momentum and vertex, to be used in neural network.
                     features=np.column_stack((this_p[:,0], this_p[:,1], this_p[:,2], throw_x, throw_y, throw_z))
                     features=torch.as_tensor(features).type(torch.FloatTensor) # Convert to Pytorch tensor
                     with torch.no_grad(): # Evaluate neural network
                         netOut=net(features)
                         netOut=torch.nn.functional.softmax(netOut).detach().numpy()
-    
+
                     # Get contained probability for 64 throws
                     nnContained=np.array(netOut[:,0], dtype=float)
                     # Get tracker probability for 64 throws
@@ -206,12 +206,12 @@ def processFiles(f):
                     combinedEfficiencyTracker=np.multiply(nnTracker, bitfield)
                     # Combined hadron containment and muon selection efficiency, throw by throw
                     combinedEfficiency=np.add(combinedEfficiencyContained, combinedEfficiencyTracker)
-    
+
                     # Count only throws which were in the fiducial volume and add them to the efficiency accumulators
                     thisEff_tracker+=np.sum(nnTracker)
                     thisEff_contained+=np.sum(nnContained)
                     thisEff_combined+=np.sum(combinedEfficiency)
-                
+
                 # After looping through all throws, divide by number of throws to get average efficiency.
                 #print(thisEff/4096)
                 effs.back().push_back(thisEff/4096)
@@ -219,7 +219,7 @@ def processFiles(f):
                 effs_contained.back().push_back(thisEff_contained/4096)
                 effs_combined.back().push_back(thisEff_combined/4096)
             #print("still running")
-
+            
         tree.Fill()
     tree.Write()
     tf.Close()

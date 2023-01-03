@@ -197,8 +197,7 @@ def processFiles(f):
                                  geoThrows["geoEffThrowsY"][int(i_event/N_EVENTS_PER_THROW)]-offset[1],
                                  geoThrows["geoEffThrowsZ"][int(i_event/N_EVENTS_PER_THROW)]-offset[2])
 
-            # Count how many throws were in the FV. Will be useful later.
-            NthrowsInFV = sum(throws_FV)
+            NthrowsInFV = sum(throws_FV) # Count how many throws were in the FV. Will be useful later.
             if NthrowsInFV==0 and APPLY_FV_CUT:
                 effs[i_event]=-1.
                 effs_tracker[i_event]=-1.
@@ -224,7 +223,6 @@ def processFiles(f):
                     thisEff += np.sum(bitfield)
 
                 # Get variables needed to evaluate muon neural network for each throw.
-                
                 # Get new XYZ from throws
                 # x is not randomized. This is a convoluted way of repeating vtx_x the correct number of times
                 throw_x = [CAF["vtx_x"][i_event]]*len(geoThrows["geoEffThrowsY"][int(i_event/N_EVENTS_PER_THROW)][i_bitfield*64:(i_bitfield+1)*64])
@@ -251,13 +249,13 @@ def processFiles(f):
                 decayToVertex = [CAF["vtx_x"][i_event] - decayXdetCoord,
                                  CAF["vtx_y"][i_event] - decayYdetCoord,
                                  CAF["vtx_z"][i_event] - decayZdetCoord]
-                
+
                 # Vector from neutrino production point to randomly thrown vertex.
                 decayToTranslated = [ [throw_x[i] - decayXdetCoord, throw_y[i] - decayYdetCoord, throw_z[i] - decayZdetCoord] for i in range(len(throw_x)) ]
 
                 magDecayToVertex = np.sqrt(np.sum(np.square(decayToVertex)))
                 magDecayToTranslated = np.sqrt(np.sum(np.square(decayToTranslated), axis = 1))
-                
+
                 translationAngle = np.dot(decayToTranslated, decayToVertex)
                 translationAngle = np.divide(translationAngle, np.multiply(magDecayToVertex,magDecayToTranslated));
                 #for angleval in translationAngle:
@@ -272,7 +270,7 @@ def processFiles(f):
                 decayToTranslated = [ thisV/np.linalg.norm(thisV) for thisV in decayToTranslated ]
 
                 phi_rot_vec = np.multiply(decayToTranslated, throw_phi[...,None])
-                
+                    
                 this_px = CAF["LepMomX"][i_event]
                 this_py = CAF["LepMomY"][i_event]
                 this_pz = CAF["LepMomZ"][i_event]
@@ -322,7 +320,7 @@ def processFiles(f):
                     thisEff_tracker += np.sum(nnTracker)
                     thisEff_contained += np.sum(nnContained)
                     thisEff_combined += np.sum(combinedEfficiency)
-                    
+
             # After looping through all throws, divide by number of throws in the fiducial volume to get average efficiency.
             if APPLY_FV_CUT :
                 effs[i_event] = float(thisEff)/NthrowsInFV
@@ -342,16 +340,16 @@ def processFiles(f):
         fv = np.logical_and(fv, numu)
         no_weird_events = np.absolute(np.sum(CAF["muon_endpoint"], axis = 1)) > 0.
         fv = np.logical_and(fv, no_weird_events)
-        
+
         had_containment = CAF["Ehad_veto"] < 30
         sel = np.logical_and(had_containment, fv)
         sel_tracker = np.logical_and(CAF['muon_tracker'] > 0, fv)
-        
+
         isContained_vec = np.vectorize(isContained)
         sel_contained = np.logical_and(isContained_vec(CAF["muon_endpoint"][:,0], CAF["muon_endpoint"][:,1], CAF["muon_endpoint"][:,2]), fv)
-        
+
         sel_combined = np.logical_and(np.logical_or(sel_tracker, sel_contained), sel)
-        
+
         #print("Number in FV {0}, number contained {1}, number in FV and contained {2}".format(sum(fv), sum(had_containment), sum(sel)))
 
         i=0
@@ -438,7 +436,7 @@ if __name__ == "__main__" :
     net = muonEffModel()
     net.load_state_dict(torch.load("/home/barwu/repos/MuonEffNN/8thTry/muonEff30.nn", map_location=torch.device('cpu')))
     net.eval()
-    
+
     #if len(allFiles) < NUM_PROCS :
         #print("Fewer files than processes, setting NUM_PROC to {0}".format(len(allFiles)))
         #NUM_PROCS = len(allFiles)
