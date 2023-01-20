@@ -65,6 +65,10 @@ def isContained(x, y, z):
         return False
     return True
 
+FV_cut=True
+LAr_position=[-2800.,-2575.,-2400.,-2175.,-2000.,-1775.,-1600.,-1375.,-1200.,-975.,-800.,-575.,-400.,-175.,0.]
+vertex_position=[-299.,-292.,-285.,-278.,-271.,-264.,-216.,-168.,-120.,-72.,-24.,24.,72.,120.,168.,216.,264.,271.,278.,
+                285.,292.,299.]
 TreeVars=["ND_OffAxis_Sim_mu_start_v_xyz_LAr", "ND_OffAxis_Sim_mu_start_p_xyz_LAr", "hadron_throw_result_LAr"]
 
 # This is the function where everything happens
@@ -72,6 +76,7 @@ TreeVars=["ND_OffAxis_Sim_mu_start_v_xyz_LAr", "ND_OffAxis_Sim_mu_start_p_xyz_LA
 # f is only 1 file, each file get assigned to a different cpu
 def processFiles(f):
     output="/storage/shared/barwu/10thTry/FDEff/"+splitext(basename(f))[0]+"_Eff.root"
+    print(output)
     # if exists(output)==True:
     # #    print("testing")
     #     return None
@@ -85,6 +90,7 @@ def processFiles(f):
         #continue
     # Get tree with x, y and phi of geometric efficiency throws.
     throwsFD=concatenate("{0}:ThrowsFD".format(f), ['throwVtxY', 'throwVtxZ', 'throwRot'], library="np")
+    #effValues=concatenate("{0}:effValues".format(f), ['ND_LAr_dtctr_pos', 'ND_LAr_vtx_pos'], library="np")
     #print(f)
 
     effs=std.vector(std.vector('double'))()
@@ -104,7 +110,7 @@ def processFiles(f):
         event=effTree['hadron_throw_result_LAr'][i_event]
         #print("i_event=",i_event)
         #if i_event==10: break #use when debugging
-        effs.clear() #remove past events' nd array efficiency data
+        effs.clear() #remove past events' ND array efficiency data
         effs_tracker.clear()
         effs_contained.clear()
         effs_combined.clear()
@@ -124,10 +130,24 @@ def processFiles(f):
                 thisEff_contained=0. # Contained muon efficiency
                 thisEff_combined=0. # Combined efficiency
 
-                this_vtx_x=effTree["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][0]
+                this_vtx_x=effTree["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][0]-\
+                    vertex_position[vtx_pos]
                 this_vtx_y=effTree["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][1]
                 this_vtx_z=effTree["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][2]
                 this_p=effTree["ND_OffAxis_Sim_mu_start_p_xyz_LAr"][i_event][det_pos][vtx_pos]
+
+                #Check which throws are in the FV. throws_FV is a boolean array with one element per throw.
+                throws_FV=isFV_vec([this_vtx_x]*len(throwsFD["throwRot"][0]), #make sure that
+                                     throwsFD["throwVtxY"][0]-offset[1], #len(throwsFD["throwRot"][0])=4096
+                                     throwsFD["throwVtxZ"][0]-offset[2])
+
+                NthrowsInFV=sum(throws_FV) #Count how many throws were in the FV. Will be useful later.
+                if NthrowsInFV==0 and FV_cut:
+                    effs.back().push_back(-1.)
+                    effs_tracker.back().push_back(-1.)
+                    effs_contained.back().push_back(-1.)
+                    effs_combined.back().push_back(-1.)
+                    continue
 
                 # Loop through the hadronic geometric efficiency throw results. Each bitfield corresponds to 64 throws.
                 # There are 64*64=4096 throws in total. Hadronic veto bits are grouped into 64, to prevent processing
@@ -212,14 +232,21 @@ def processFiles(f):
                     thisEff_contained+=np.sum(nnContained)
                     thisEff_combined+=np.sum(combinedEfficiency)
 
+                print("event ",end="#")
+                print(i_event,end=", ")
+                print("LAr position",end="=")
+                print(LAr_position[det_pos],end=", ")
+                print("vertex position",end="=")
+                print(vertex_position[vtx_pos],end=", ")
+                print("hadron efficiency: ",end="")
+                print(thisEff/4096)
                 # After looping through all throws, divide by number of throws to get average efficiency.
-                #print(thisEff/4096)
                 effs.back().push_back(thisEff/4096)
                 effs_tracker.back().push_back(thisEff_tracker/4096)
                 effs_contained.back().push_back(thisEff_contained/4096)
                 effs_combined.back().push_back(thisEff_combined/4096)
-            #print("still running")
-            
+
+        #print("still running")
         tree.Fill()
     tree.Write()
     tf.Close()

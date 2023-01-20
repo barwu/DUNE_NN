@@ -60,11 +60,11 @@ void populate_histograms(char* eff,char* caf,TH1D* hists[2][10],int j)
   TFile caf_file(caf);
   TTree *event_data=(TTree*)eff_file.Get("event_data");
   TTree *detections=(TTree*)caf_file.Get("effTreeND");
-  for(auto item:br) //efficiencies are in 3d array, but energy is in 1d array
+  for(auto sel:br) //efficiencies are in 3d array, but energy is in 1d array
   {
-    if(item.calced) continue;
-    event_data->SetBranchAddress(item.eff_name, &(item.eff_value));
-    hadr_eff=item.eff_value;
+    if(sel.calced) continue;
+    event_data->SetBranchAddress(sel.eff_name, &(sel.eff_value));
+    hadr_eff=sel.eff_value;
   }
   //energy is in GeV
   detections->SetBranchAddress("ND_E_vis_true", &ND_E_vis_true); //true energy
@@ -80,9 +80,6 @@ void populate_histograms(char* eff,char* caf,TH1D* hists[2][10],int j)
     event_data->GetEntry(i);
     for (int lar_pos=0;lar_pos<hadr_eff->size();lar_pos++) {
       for (int vtx_pos=0;vtx_pos<hadr_eff->at(j).size();vtx_pos++) {
-        //calculation for the muon-selected cut
-        //muon_sel_eff[lar_pos][vtx_pos]=muon_cont_eff[lar_pos][vtx_pos]+muon_tra_eff[lar_pos][vtx_pos];
-        //if (muon_sel_eff<0.0001) {cout<<"event "<<i<<" of file #"<<j<<" has small selected efficiency"<<endl;}
 
 	      int n=0;
         for (auto item:pr) {
@@ -132,8 +129,8 @@ void FD_energy_histograms()
   {
     memset(eff, 0, 99); // clear array each time
     memset(caf, 0, 99);
-    sprintf(eff,"/storage/shared/barwu/10thTry/FDEff/FDGeoEff_62877585_99%01d_Eff.root",j);
-    sprintf(caf,"/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_99%01d.root",j);
+    sprintf(eff,"/storage/shared/barwu/10thTry/FDEff/FDGeoEff_62877585_99%d_Eff.root",j);
+    sprintf(caf,"/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_99%d.root",j);
     if(access(eff, 0)==0)
     {
       populate_histograms(eff,caf,histograms,j);
