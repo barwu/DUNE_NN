@@ -17,12 +17,12 @@ from scipy.interpolate import interp1d
 #from ROOT import TGraph
 from array import array
 # The code is currently quite slow, so it uses multiprocessing to speed things up
-from multiprocessing import Pool
+#from multiprocessing import Pool
 
 # SET NUMBER OF PROCESSORS HERE
 NUM_PROCS=50
 # ND coordinate offset.
-offset=[0.,5.,411.]
+offset=[0.,5.5,411.]
 # Average neutrino decay position in beam coordinates as a function of vertex x (from Luke):
 # Will be used to set the decay position event-by-event.
 OffAxisPoints=array('f', [-2, 0.5, 3, 5.5, 8, 10.5, 13, 15.5, 18, 20.5, 23, 25.5, 28, 30.5])
@@ -75,6 +75,7 @@ TreeVars=["ND_OffAxis_Sim_mu_start_v_xyz_LAr", "ND_OffAxis_Sim_mu_start_p_xyz_LA
 # Analyse one file at a time, otherwise memory explodes!
 # f is only 1 file, each file get assigned to a different cpu
 def processFiles(f):
+    # output="/storage/shared/barwu/10thTry/FDEff/"+splitext(basename(f))[0]+"_Eff.root"
     output="/storage/shared/barwu/10thTry/FDEff/"+splitext(basename(f))[0]+"_Eff.root"
     print(output)
     # if exists(output)==True:
@@ -90,12 +91,13 @@ def processFiles(f):
         #continue
     # Get tree with x, y and phi of geometric efficiency throws.
     throwsFD=concatenate("{0}:ThrowsFD".format(f), ['throwVtxY', 'throwVtxZ', 'throwRot'], library="np")
-    #effValues=concatenate("{0}:effValues".format(f), ['ND_LAr_dtctr_pos', 'ND_LAr_vtx_pos'], library="np")
+    effValues=concatenate("{0}:effValues".format(f), ['ND_LAr_dtctr_pos', 'ND_LAr_vtx_pos'], library="np")
     #print(f)
 
     effs=std.vector(std.vector('double'))()
     effs_tracker=std.vector(std.vector('double'))()
     effs_contained=std.vector(std.vector('double'))()
+    effs_selected=std.vector(std.vector('double'))()
     effs_combined=std.vector(std.vector('double'))()  
 
     tf=TFile.Open(output,"RECREATE")
@@ -108,21 +110,28 @@ def processFiles(f):
     # Event loop
     for i_event in range(len(effTree['hadron_throw_result_LAr'])):
         event=effTree['hadron_throw_result_LAr'][i_event]
-        #print("i_event=",i_event)
+        #print("i_event=",end="")
+        #print(i_event)
         #if i_event==10: break #use when debugging
         effs.clear() #remove past events' ND array efficiency data
         effs_tracker.clear()
         effs_contained.clear()
+        effs_selected.clear()
         effs_combined.clear()
         for det_pos in range(len(event)):
-            #print("det_pos=",det_pos)
+            # print("LAr pos=",end="")
+            # print(effValues['ND_LAr_dtctr_pos'][det_pos])
+            # print("det_pos=",end="")
+            # print(det_pos)
 
             effs.push_back(std.vector('double')())
             effs_tracker.push_back(std.vector('double')())
             effs_contained.push_back(std.vector('double')())
+            effs_selected.push_back(std.vector('double')())
             effs_combined.push_back(std.vector('double')())
             for vtx_pos in range(len(event[det_pos])):
-                #print("vtx_pos=",vtx_pos)
+            #     print("vertex pos=",end="")
+            #     print(effValues['ND_LAr_vtx_pos'][vtx_pos])
 
                 # Accumulators for efficiency calculation
                 thisEff=0. # Hadronic efficiency
@@ -131,17 +140,24 @@ def processFiles(f):
                 thisEff_combined=0. # Combined efficiency
 
                 this_vtx_x=effTree["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][0]-\
-                    vertex_position[vtx_pos]
+                        LAr_position[det_pos]
                 this_vtx_y=effTree["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][1]
                 this_vtx_z=effTree["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][2]
                 this_p=effTree["ND_OffAxis_Sim_mu_start_p_xyz_LAr"][i_event][det_pos][vtx_pos]
 
                 #Check which throws are in the FV. throws_FV is a boolean array with one element per throw.
                 throws_FV=isFV_vec([this_vtx_x]*len(throwsFD["throwRot"][0]), #make sure that
-                                     throwsFD["throwVtxY"][0]-offset[1], #len(throwsFD["throwRot"][0])=4096
-                                     throwsFD["throwVtxZ"][0]-offset[2])
+                                    throwsFD["throwVtxY"][0]-offset[1], #len(throwsFD["throwRot"][0])=4096
+                                    throwsFD["throwVtxZ"][0]-offset[2])
 
-                NthrowsInFV=sum(throws_FV) #Count how many throws were in the FV. Will be useful later.
+                # print(this_vtx_x)
+                # print(throwsFD["throwVtxY"][0]-offset[1])
+                # print(throwsFD["throwVtxZ"][0]-offset[2])
+                # print(throws_FV)
+                if FV_cut: #Count how many throws were in the FV. Will be useful later.
+                    NthrowsInFV=sum(throws_FV)
+                else: #If you don't use the FV, then all throws should be included. 
+                    NthrowsInFV=4096 #There are 64*64=4096 throws in total. 
                 if NthrowsInFV==0 and FV_cut:
                     effs.back().push_back(-1.)
                     effs_tracker.back().push_back(-1.)
@@ -150,8 +166,7 @@ def processFiles(f):
                     continue
 
                 # Loop through the hadronic geometric efficiency throw results. Each bitfield corresponds to 64 throws.
-                # There are 64*64=4096 throws in total. Hadronic veto bits are grouped into 64, to prevent processing
-                # overload for the neural network.
+                # Hadronic veto bits are grouped into 64, to prevent processing overload for the neural network.
                 for i_bitfield, bitfield in enumerate(event[det_pos][vtx_pos][0][0]):
                     bitfield=np.array([bitfield], dtype=np.uint64) # Converts the 64 bit integer into "bit" array
                     bitfield=np.unpackbits(np.array(bitfield, dtype='>i8').view(np.uint8))
@@ -161,8 +176,15 @@ def processFiles(f):
                     for j_bitfield in range(len(bitfield)): bitfield[-(1+j_bitfield)]=bitfieldTemp[j_bitfield]
                     # Calculate hadron efficiency. Sum the number of throws where the hadronic system was contained
                     # (bit in bitfield is 1) and the throw was in the fiducial volume.
-                    thisEff+=np.sum(bitfield)
+                    if FV_cut: thisEff+=np.sum(np.logical_and(bitfield, throws_FV[i_bitfield*64:(i_bitfield+1)*64]))
+                    else: thisEff+=np.sum(bitfield)
 
+                    # print("Y:",end=" ")
+                    # print(throwsFD["throwVtxY"][0][i_bitfield*64:(i_bitfield+1)*64])
+                    # print("Z:",end=" ")
+                    # print(throwsFD["throwVtxZ"][0][i_bitfield*64:(i_bitfield+1)*64])
+                    # print("Rotation:",end=" ")
+                    # print(throwsFD["throwRot"][0][i_bitfield*64:(i_bitfield+1)*64])
                     # Get variables needed to evaluate muon neural network for each throw.
                     # x is not randomized. This is a convoluted way of repeating vtx_x the correct number of times
                     throw_x=[this_vtx_x]*len(throwsFD["throwVtxZ"][0][i_bitfield*64:(i_bitfield+1)*64])
@@ -195,7 +217,7 @@ def processFiles(f):
                     #for angleval in translationAngle: if angleval<=-1 or angleval>=1: print(i_event, angleval)
                     translationAngle=np.arccos(translationAngle);
                     translationAxis=np.cross(decayToTranslated, decayToVertex)
-                    translationAxis=[ thisV/np.linalg.norm(thisV) for thisV in translationAxis]
+                    translationAxis=[thisV/np.linalg.norm(thisV) for thisV in translationAxis]
                     translation_rot_vec=np.multiply(translationAxis, translationAngle[...,None])
                     decayToTranslated=[thisV/np.linalg.norm(thisV) for thisV in decayToTranslated]
                     phi_rot_vec=np.multiply(decayToTranslated, throw_phi[...,None])
@@ -212,9 +234,9 @@ def processFiles(f):
                     # Features contains randomized momentum and vertex, to be used in neural network.
                     features=np.column_stack((this_p[:,0], this_p[:,1], this_p[:,2], throw_x, throw_y, throw_z))
                     features=torch.as_tensor(features).type(torch.FloatTensor) # Convert to Pytorch tensor
-                    with torch.no_grad(): # Evaluate neural network
-                        netOut=net(features)
-                        netOut=torch.nn.functional.softmax(netOut).detach().numpy()
+                    with torch.no_grad(): # Evaluate neural network #neural network output is 2D array of probability a set of
+                        netOut=net(features) #events being contained-detected, tracker-detected, or not detected #I don't use
+                        netOut=torch.nn.functional.softmax(netOut).detach().numpy() #the 3rd column (not-detected probability)
 
                     # Get contained probability for 64 throws
                     nnContained=np.array(netOut[:,0], dtype=float)
@@ -228,23 +250,33 @@ def processFiles(f):
                     combinedEfficiency=np.add(combinedEfficiencyContained, combinedEfficiencyTracker)
 
                     # Count only throws which were in the fiducial volume and add them to the efficiency accumulators
-                    thisEff_tracker+=np.sum(nnTracker)
-                    thisEff_contained+=np.sum(nnContained)
-                    thisEff_combined+=np.sum(combinedEfficiency)
+                    if FV_cut:
+                        thisEff_tracker+=np.sum(np.multiply(nnTracker, throws_FV[i_bitfield*64:(i_bitfield+1)*64]))
+                        thisEff_contained+=np.sum(np.multiply(nnContained, throws_FV[i_bitfield*64:(i_bitfield+1)*64]))
+                        thisEff_combined+=np.sum(np.multiply(combinedEfficiency, throws_FV[i_bitfield*64:(i_bitfield+1)*64]))
+                    else:
+                        thisEff_tracker+=np.sum(nnTracker)
+                        thisEff_contained+=np.sum(nnContained)
+                        thisEff_combined+=np.sum(combinedEfficiency)
 
-                print("event ",end="#")
-                print(i_event,end=", ")
-                print("LAr position",end="=")
-                print(LAr_position[det_pos],end=", ")
-                print("vertex position",end="=")
-                print(vertex_position[vtx_pos],end=", ")
-                print("hadron efficiency: ",end="")
-                print(thisEff/4096)
-                # After looping through all throws, divide by number of throws to get average efficiency.
-                effs.back().push_back(thisEff/4096)
-                effs_tracker.back().push_back(thisEff_tracker/4096)
-                effs_contained.back().push_back(thisEff_contained/4096)
-                effs_combined.back().push_back(thisEff_combined/4096)
+                # print("event ",end="#")
+                # print(i_event,end=", ")
+                # print("LAr position",end="=")
+                # print(LAr_position[det_pos],end=", ")
+                # print("vertex position",end="=")
+                # print(vertex_position[vtx_pos],end=", ")
+                # print("hadron efficiency: ",end="")
+                # # After looping through all throws, divide by number of throws in the fiducial volume to get average efficiency.
+                # print(thisEff/NthrowsInFV)
+                effs.back().push_back(thisEff/NthrowsInFV)
+                effs_tracker.back().push_back(thisEff_tracker/NthrowsInFV)
+                effs_contained.back().push_back(thisEff_contained/NthrowsInFV)
+                muon_efficiency=(thisEff_contained+thisEff_tracker)/NthrowsInFV
+                if muon_efficiency>1.: muon_efficiency=-2.
+                print("muon selected efficiency", end="= ")
+                print(muon_efficiency)
+                effs_selected.back().push_back(muon_efficiency)
+                effs_combined.back().push_back(thisEff_combined/NthrowsInFV)
 
         #print("still running")
         tree.Fill()
@@ -255,7 +287,8 @@ if __name__=="__main__":
     net=muonEffModel()
     net.load_state_dict(torch.load("/home/barwu/repos/MuonEffNN/8thTry/muonEff30.nn",map_location=torch.device('cpu')))
     net.eval()
-    hadron_file="/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_99?.root"
+    #hadron_file="/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_99?.root"
+    hadron_file="/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_*.root"
     allFiles=glob(hadron_file)
     #if len(allFiles)<NUM_PROCS:
         #print("Fewer files than processes, setting NUM_PROC to {0}".format(len(allFiles)))
@@ -263,9 +296,9 @@ if __name__=="__main__":
     #filesPerProc=int(np.ceil(float(len(allFiles))/NUM_PROCS))
     #print(filesPerProc, NUM_PROCS)
 
-    pool=Pool(NUM_PROCS)
-    pool.map(processFiles, allFiles)
+    #pool=Pool(NUM_PROCS)
+    #pool.map(processFiles, allFiles)
         #don't use multiprocessing for debugging
-    #for file in allFiles:
-        #processFiles(file)
-    #processFiles("/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_999.root")
+    for file in allFiles:
+        processFiles(file)
+    #processFiles("/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_990.root")
