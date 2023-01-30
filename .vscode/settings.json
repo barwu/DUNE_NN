@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "add_branches.C": "cpp"
+        "add_branches.C": "cpp",
+        "generate_histograms.C": "cpp",
+        "new_hist_fill.C": "cpp"
     }
 }

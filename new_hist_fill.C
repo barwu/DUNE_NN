@@ -13,6 +13,7 @@ using namespace std;
 #include "TCanvas.h"
 #include "TLegend.h"
 #include "TStyle.h"
+#include "TPaveStats.h"
 
 struct Para
 {
@@ -155,7 +156,7 @@ void new_hist_fill()
   {
     memset(eff, 0, 99); // clear array each time
     memset(caf, 0, 99);
-    sprintf(eff,"/storage/shared/barwu/10thTry/combined1/FHC.10%05d.CAF_Eff.root",j);
+    sprintf(eff,"/storage/shared/barwu/10thTry/combined1/0m/FHC.10%05d.CAF_Eff.root",j);
     sprintf(caf,"/storage/shared/wshi/CAFs/NDFHC_PRISM/%02d/FHC.10%05d.CAF.root",j/1000,j);
     //sprintf(eff,"/storage/shared/barwu/9thTry/eff_trees/FHC.100%04d.CAF_MuonEff.root",j);
     //sprintf(caf,"/storage/shared/cvilela/CAF/ND_v7/0%01d/FHC.100%04d.CAF.root",j/1000,j);
@@ -169,8 +170,8 @@ void new_hist_fill()
   }
 
   gROOT->SetBatch(kFALSE);
-  gStyle->SetOptStat(000000000);
-  //gStyle->SetOptStat(111111111);
+  //gStyle->SetOptStat(000000000);
+  gStyle->SetOptStat(111111111);
   TCanvas *c=new TCanvas("c", "c", 1800, 1000);
   c->Divide(9,5);
   int n=0;
@@ -208,10 +209,14 @@ void new_hist_fill()
       leg->AddEntry(hist2, "selection-cut distribution");
       leg->AddEntry(hist3, "geo corrected distribution");
       leg->Draw();
+      gPad->Update();
+      TPaveStats *ps;
+      ps=(TPaveStats*)hist3->GetListOfFunctions()->FindObject("stats");
+      ps->SetFillStyle(0); 
       n++;
     }
   }
-  c->SaveAs("images/PRISM_hists_all.png");
+  c->SaveAs("/home/barwu/repos/MuonEffNN/images/0m_PRISM_hists_all.png");
 
   TCanvas *cs[5];
   n=0;
@@ -252,10 +257,14 @@ void new_hist_fill()
       leg->AddEntry(hist2, "selection-cut distribution");
       leg->AddEntry(hist3, "geo corrected distribution");
       leg->Draw();
+      gPad->Update();
+      TPaveStats *ps;
+      ps=(TPaveStats*)hist3->GetListOfFunctions()->FindObject("stats");
+      ps->SetFillStyle(0);
       n++;
     }
     cs[i]->Update();
-    cs[i]->SaveAs(Form("images/PRISM_hists_%s.png",dt));
+    cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/0m_PRISM_hists_%s.png",dt));
     i++;
   }
 }

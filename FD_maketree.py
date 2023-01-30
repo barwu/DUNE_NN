@@ -17,7 +17,7 @@ from scipy.interpolate import interp1d
 #from ROOT import TGraph
 from array import array
 # The code is currently quite slow, so it uses multiprocessing to speed things up
-#from multiprocessing import Pool
+from multiprocessing import Pool
 
 # SET NUMBER OF PROCESSORS HERE
 NUM_PROCS=50
@@ -105,6 +105,7 @@ def processFiles(f):
     tree.Branch("hadron_selected_eff", effs)
     tree.Branch("muon_tracker_eff", effs_tracker)
     tree.Branch("muon_contained_eff", effs_contained)
+    tree.Branch("muon_selected_eff", effs_selected)
     tree.Branch("combined_eff", effs_combined)
 
     # Event loop
@@ -272,14 +273,16 @@ def processFiles(f):
                 effs_tracker.back().push_back(thisEff_tracker/NthrowsInFV)
                 effs_contained.back().push_back(thisEff_contained/NthrowsInFV)
                 muon_efficiency=(thisEff_contained+thisEff_tracker)/NthrowsInFV
-                if muon_efficiency>1.: muon_efficiency=-2.
-                print("muon selected efficiency", end="= ")
-                print(muon_efficiency)
+                if muon_efficiency>1.:
+                    print("muon selected efficiency", end="=")
+                    print(muon_efficiency)
+                    muon_efficiency=-2.
                 effs_selected.back().push_back(muon_efficiency)
                 effs_combined.back().push_back(thisEff_combined/NthrowsInFV)
 
         #print("still running")
         tree.Fill()
+    print("")
     tree.Write()
     tf.Close()
 
@@ -296,9 +299,9 @@ if __name__=="__main__":
     #filesPerProc=int(np.ceil(float(len(allFiles))/NUM_PROCS))
     #print(filesPerProc, NUM_PROCS)
 
-    #pool=Pool(NUM_PROCS)
-    #pool.map(processFiles, allFiles)
+    pool=Pool(NUM_PROCS)
+    pool.map(processFiles, allFiles)
         #don't use multiprocessing for debugging
-    for file in allFiles:
-        processFiles(file)
+    #for file in allFiles:
+        #processFiles(file)
     #processFiles("/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_990.root")

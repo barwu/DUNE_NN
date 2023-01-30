@@ -14,7 +14,9 @@ using namespace std;
 #include "TCanvas.h"
 #include "TLegend.h"
 #include "TStyle.h"
+#include "TColor.h"
 #include "TAxis.h"
+#include "TPaveStats.h"
 #include <vector>
 
 const int NUM_VTX=22, NUM_LAR_DTR=15;
@@ -26,46 +28,37 @@ struct sel_type
 {
   const char* sel_name;
   const char* eff_name;
-  bool calced=false;
+  Color_t color;
   vector<vector<double>>* eff_value=nullptr;
   sel_type() {}
-  sel_type(const char* sn, const char* en, bool c)
-  :sel_name(sn),eff_name(en),calced(c) {}
+  sel_type(const char* sn, const char* en, Color_t c)
+  :sel_name(sn),eff_name(en),color(c) {}
 };
 
 vector<sel_type> br=
 {
-  sel_type("muon_contained", "muon_contained_eff", false),
-  sel_type("muon_tracker", "muon_tracker_eff", false),
-  //sel_type("muon_selected", "muon_sel_eff", true),
-  sel_type("hadron_selected", "hadron_selected_eff", false),
-  sel_type("combined", "combined_eff", false)
+  sel_type("muon_contained", "muon_contained_eff", kOrange+7),
+  sel_type("muon_tracker", "muon_tracker_eff", kMagenta),
+  sel_type("muon_selected", "muon_selected_eff", kPink),
+  sel_type("hadron_selected", "hadron_selected_eff", kAzure),
+  sel_type("combined", "combined_eff", kSpring)
 };
 
 void accumulate_effs(char* eff,int j)
 {
   TFile eff_file(eff);
   TTree *event_data=(TTree*)eff_file.Get("event_data");
-  for(auto& sel:br) //efficiencies are in 3d array, but energy is in 1d array
-  {
-    if(sel.calced) continue;
-    event_data->SetBranchAddress(sel.eff_name, &(sel.eff_value));
-  }
-
+  for(auto& sel:br) {event_data->SetBranchAddress(sel.eff_name, &(sel.eff_value));}
   Long64_t nentries=event_data->GetEntries();
-  for (int i_event=0;i_event<1;i_event++) {
+  for (int i_event=0;i_event<nentries;i_event++) {
     event_data->GetEntry(i_event);
 	  int i_select=0;
     for (sel_type& sel:br) {
       vector<vector<double>>* eff_value=sel.eff_value;
-      vector<vector<double>>& eff_value2= *eff_value;
-      //vector<vector<double>>* eff_value2 = hadr_eff_ptr;
+      vector<vector<double>>& eff_value2=*eff_value;
+      //vector<vector<double>>* eff_value2=hadr_eff_ptr;
       for (unsigned long lar_pos=0;lar_pos<NUM_LAR_DTR;lar_pos++) {
         for (unsigned long vtx_pos=0;vtx_pos<NUM_VTX;vtx_pos++) {
-        //calculation for the muon-selected cut
-        //muon_sel_eff[lar_pos][vtx_pos]=muon_cont_eff[lar_pos][vtx_pos]+muon_tra_eff[lar_pos][vtx_pos];
-        //if (muon_sel_eff[lar_pos][vtx_pos]<0.0001) {
-          //cout<<"event "<<i<<" of file #"<<j<<" has small selected efficiency"<<endl;}
           // TGraph* hist=hists[n][lar_pos];
           double geo_eff=eff_value2[lar_pos][vtx_pos];
           // hist->Fill(vertex_position[vtx_pos].q, geo_eff);
@@ -81,7 +74,7 @@ void accumulate_effs(char* eff,int j)
 void eff_distributions()
 {
   char eff[99];
-  std::memset(total_detected, 0, 5 * NUM_LAR_DTR * NUM_VTX * sizeof(double));
+  std::memset(total_detected, 0, 5*NUM_LAR_DTR*NUM_VTX*sizeof(double));
   for (int j=1; j<9; j++)
   {
     memset(eff, 0, 99); // clear array each time
@@ -92,13 +85,6 @@ void eff_distributions()
     } else {
       cout<<"Warning: missing file:"<<eff<<endl;
       continue;
-    }
-  }
-  for (int j=0;j<NUM_LAR_DTR;j++) {
-    for (int k=0;k<NUM_VTX;k++) {
-      for (int i=0;i<4;i++) {
-        cout<<"LAr pos="<<LAr_position[j]<<", vtx pos="<<vertex_position[k]<<", eff="<<total_detected[i][j][k]<<endl;
-      }
     }
   }
 
@@ -114,13 +100,13 @@ void eff_distributions()
     }
     i_select++;
   }
-  for (int j=0;j<NUM_LAR_DTR;j++) {
-    for (int k=0;k<NUM_VTX;k++) {
-      for (int i=0;i<4;i++) {
-        cout<<"LAr pos="<<LAr_position[j]<<", vtx pos="<<vertex_position[k]<<", eff="<<total_detected[i][j][k]<<endl;
-      }
-    }
-  }
+  // for (int j=0;j<NUM_LAR_DTR;j++) {
+  //   for (int k=0;k<NUM_VTX;k++) {
+  //     for (int i=0;i<5;i++) {
+  //       cout<<"LAr pos="<<LAr_position[j]<<", vtx pos="<<vertex_position[k]<<", eff="<<total_detected[i][j][k]<<endl;
+  //     }
+  //   }
+  // }
 
   gStyle->SetOptStat(111111111);
   TCanvas *c=new TCanvas("c","Energy Distributions",1800,1000);
@@ -135,11 +121,12 @@ void eff_distributions()
     int i_select=0;
     for (auto sel:br)
     {
+      Color_t linecolor=sel.color;
       const char *selection=sel.sel_name;
       linegraphs[i_select]=graphs[i_select][i];
       linegraphs[i_select]->SetMarkerStyle(2*i_select+58);
-      linegraphs[i_select]->SetMarkerColor(i_select+1);
-      linegraphs[i_select]->SetLineColor(i_select+1);
+      linegraphs[i_select]->SetMarkerColor(linecolor);
+      linegraphs[i_select]->SetLineColor(linecolor);
       linegraphs[i_select]->SetTitle(selection);
       mg->Add(linegraphs[i_select]);
       i_select++;
@@ -152,4 +139,5 @@ void eff_distributions()
     pad->BuildLegend();
   }
   c->Update();
+  c->SaveAs("/home/barwu/repos/MuonEffNN/10thTry/FD_effs_line_charts4.png");
 }
