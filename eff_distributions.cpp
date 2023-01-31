@@ -82,6 +82,7 @@ void eff_distributions()
     if(access(eff, 0)==0)
     {
       accumulate_effs(eff,j);
+      accumulate_effs("/storage/shared/barwu/FDGeoEffinND/OutFDGeoEff_61916696.root", j)
     } else {
       cout<<"Warning: missing file:"<<eff<<endl;
       continue;

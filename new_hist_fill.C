@@ -152,12 +152,12 @@ void new_hist_fill()
     }
   }
 
-  for (int j=0; j<=29999; j++)
+  for (int j=0; j<25022; j++)
   {
     memset(eff, 0, 99); // clear array each time
     memset(caf, 0, 99);
-    sprintf(eff,"/storage/shared/barwu/10thTry/combined1/0m/FHC.10%05d.CAF_Eff.root",j);
-    sprintf(caf,"/storage/shared/wshi/CAFs/NDFHC_PRISM/%02d/FHC.10%05d.CAF.root",j/1000,j);
+    sprintf(eff,"/storage/shared/barwu/10thTry/combined1/2m/FHC.30%05d.CAF_Eff.root",j);
+    sprintf(caf,"/storage/shared/barwu/10thTry/2m/%02d/FHC.30%05d.CAF.root",j/1000,j);
     //sprintf(eff,"/storage/shared/barwu/9thTry/eff_trees/FHC.100%04d.CAF_MuonEff.root",j);
     //sprintf(caf,"/storage/shared/cvilela/CAF/ND_v7/0%01d/FHC.100%04d.CAF.root",j/1000,j);
     if(access(eff, 0)==0)
@@ -216,7 +216,7 @@ void new_hist_fill()
       n++;
     }
   }
-  c->SaveAs("/home/barwu/repos/MuonEffNN/images/0m_PRISM_hists_all.png");
+  c->SaveAs("/home/barwu/repos/MuonEffNN/images/2m_PRISM_hists_all.png");
 
   TCanvas *cs[5];
   n=0;
@@ -264,7 +264,7 @@ void new_hist_fill()
       n++;
     }
     cs[i]->Update();
-    cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/0m_PRISM_hists_%s.png",dt));
+    cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/2m_PRISM_hists_%s.png",dt));
     i++;
   }
 }
