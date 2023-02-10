@@ -75,14 +75,13 @@ void eff_distributions()
 {
   char eff[99];
   std::memset(total_detected, 0, 5*NUM_LAR_DTR*NUM_VTX*sizeof(double));
-  for (int j=1; j<9; j++)
+  for (int j=0; j<9; j++)
   {
     memset(eff, 0, 99); // clear array each time
     sprintf(eff, "/storage/shared/barwu/10thTry/FDEff/FDGeoEff_62877585_99%d_Eff.root", j);
     if(access(eff, 0)==0)
     {
       accumulate_effs(eff,j);
-      accumulate_effs("/storage/shared/barwu/FDGeoEffinND/OutFDGeoEff_61916696.root", j)
     } else {
       cout<<"Warning: missing file:"<<eff<<endl;
       continue;
@@ -140,5 +139,5 @@ void eff_distributions()
     pad->BuildLegend();
   }
   c->Update();
-  c->SaveAs("/home/barwu/repos/MuonEffNN/10thTry/FD_effs_line_charts4.png");
+  c->SaveAs("/home/barwu/repos/MuonEffNN/10thTry/FD_effs_line_charts5.png");
 }

@@ -43,6 +43,10 @@ int muon_cont, muon_tra, muon_sel, hadr, comb;
 double muon_cont_eff, muon_tra_eff, muon_sel_eff, hadr_eff, comb_eff;
 double x_pos, y_pos, z_pos, XLepMom, YLepMom, ZLepMom;
 double TotalMom, cos_angle, LongitudinalMom;
+list_of_directories[40]={"0mgsimple","0m","1.75m","2m","4m","5.75m","8m","9.75m","12m","13.75m","16m",
+"17.75m","20m","21.75m","24m","25.75m","26.75m","28m","28.25m","28.5m","0mgsimpleRHC","0mRHC","1.75mRHC",
+"2mRHC","4mRHC","5.75mRHC","8mRHC","9.75mRHC","12mRHC","13.75mRHC","16mRHC","17.75mRHC","20mRHC",
+"21.75mRHC","24mRHC","25.75mRHC","26.75mRHC","28mRHC","28.25mRHC","28.5mRHC"};
 
 Para pr[]=
 {
@@ -156,8 +160,8 @@ void new_hist_fill()
   {
     memset(eff, 0, 99); // clear array each time
     memset(caf, 0, 99);
-    sprintf(eff,"/storage/shared/barwu/10thTry/combined1/2m/FHC.30%05d.CAF_Eff.root",j);
-    sprintf(caf,"/storage/shared/barwu/10thTry/2m/%02d/FHC.30%05d.CAF.root",j/1000,j);
+    sprintf(eff,"/storage/shared/barwu/10thTry/combined1/4m/FHC.30%05d.CAF_Eff.root",j);
+    sprintf(caf,"/storage/shared/barwu/10thTry/4m/%02d/FHC.30%05d.CAF.root",j/1000,j);
     //sprintf(eff,"/storage/shared/barwu/9thTry/eff_trees/FHC.100%04d.CAF_MuonEff.root",j);
     //sprintf(caf,"/storage/shared/cvilela/CAF/ND_v7/0%01d/FHC.100%04d.CAF.root",j/1000,j);
     if(access(eff, 0)==0)
@@ -216,7 +220,7 @@ void new_hist_fill()
       n++;
     }
   }
-  c->SaveAs("/home/barwu/repos/MuonEffNN/images/2m_PRISM_hists_all.png");
+  c->SaveAs("/home/barwu/repos/MuonEffNN/images/4m_PRISM_hists_all.png");
 
   TCanvas *cs[5];
   n=0;
@@ -264,7 +268,7 @@ void new_hist_fill()
       n++;
     }
     cs[i]->Update();
-    cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/2m_PRISM_hists_%s.png",dt));
+    cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/4m_PRISM_hists_%s.png",dt));
     i++;
   }
 }

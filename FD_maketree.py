@@ -78,9 +78,9 @@ def processFiles(f):
     # output="/storage/shared/barwu/10thTry/FDEff/"+splitext(basename(f))[0]+"_Eff.root"
     output="/storage/shared/barwu/10thTry/FDEff/"+splitext(basename(f))[0]+"_Eff.root"
     print(output)
-    # if exists(output)==True:
-    # #    print("testing")
-    #     return None
+    if exists(output)==True:
+    #    print("testing")
+        return None
     try:
         # Get effTree TTree
         effTree=concatenate("{0}:effTreeND".format(f), TreeVars, library="np")
@@ -273,10 +273,10 @@ def processFiles(f):
                 effs_tracker.back().push_back(thisEff_tracker/NthrowsInFV)
                 effs_contained.back().push_back(thisEff_contained/NthrowsInFV)
                 muon_efficiency=(thisEff_contained+thisEff_tracker)/NthrowsInFV
-                if muon_efficiency>1.:
-                    print("muon selected efficiency", end="=")
-                    print(muon_efficiency)
-                    muon_efficiency=-2.
+                # if muon_efficiency>1.:
+                #     print("muon selected efficiency", end="=")
+                #     print(muon_efficiency)
+                #     muon_efficiency=-2.
                 effs_selected.back().push_back(muon_efficiency)
                 effs_combined.back().push_back(thisEff_combined/NthrowsInFV)
 

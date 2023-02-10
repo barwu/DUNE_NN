@@ -5,35 +5,27 @@ Created on Mon Jan 24 16:30:37 2022
 
 @author: barwu
 """
-
-from uproot4 import concatenate, exceptions
-from uproot3 import recreate, newtree
+from uproot import concatenate, exceptions, recreate
 import numpy as np
 from glob import glob
 from sys import argv
-
-# The code is currently quite slow, so it uses multiprocessing to speed things up
-from multiprocessing import Pool
-# SET NUMBER OF PROCESSORS HERE
-NUM_PROCS = 50
-
 import torch
 from muonEffModel import muonEffModel
 from os.path import splitext, basename, exists
 from scipy.spatial.transform import Rotation as R
 from scipy.interpolate import interp1d
 #import math
-
-#from pickle import dump
-
-# ND coordinate offset.
-offset = [ 0., 5.5, 411. ]
-
-# Whether or not to apply FV cut to throws. Should be set to true.
-APPLY_FV_CUT = True
-
 #from ROOT import TGraph
 from array import array
+# The code is currently quite slow, so it uses multiprocessing to speed things up
+from multiprocessing import Pool
+
+# SET NUMBER OF PROCESSORS HERE
+NUM_PROCS = 50
+# ND coordinate offset.
+offset = [ 0., 5.5, 411. ]
+# Whether or not to apply FV cut to throws. Should be set to true.
+APPLY_FV_CUT = True
 
 # Average neutrino decay position in beam coordinates as a function of vertex x (from Luke): Will be used to set the decay position event-by-event.
 OffAxisPoints = array('f', [-2, 0.5, 3,    5.5, 8, 10.5, 13, 15.5, 18,  20.5, 23,  25.5, 28,   30.5])
@@ -52,10 +44,8 @@ def isFV(x, y, z) :
 
     for i in [-3, -2, -1, 0, 1, 2, 3] :
         cathode_center = i*102.1
-
         if (x > cathode_center - 0.75) and (x < cathode_center + 0.75) :
             inDeadRegion = True
-
         module_boundary = i*102.1+51.05
         if (i <= 2) and (x > module_boundary - 1.3) and (x < module_boundary + 1.3) :
             inDeadRegion = True
@@ -80,39 +70,43 @@ def isContained(x, y, z) :
         return False
     return True
 
-treeVarsToRead = ['isCC',
-                  #'nuPDG',
-                  #'Ev',
-                  #'LepE',
-                  "LepPDG",
-                  'LepMomX',
-                  'LepMomY', 
-                  'LepMomZ',
-                  #'NuMomX',
-                  #'NuMomY', 
-                  #'NuMomZ',
-                  'vtx_x',
-                  'vtx_y',
-                  'vtx_z',
-                  'muon_tracker',
-                  'LepNuAngle',
-                  'geoEffThrowResults',
-                  'event',
-                  'Ehad_veto',
-                  'muon_endpoint']
+treeVarsToRead=['isCC',
+                #'nuPDG',
+                #'Ev',
+                #'LepE',
+                "LepPDG",
+                'LepMomX',
+                'LepMomY', 
+                'LepMomZ',
+                #'NuMomX',
+                #'NuMomY', 
+                #'NuMomZ',
+                'vtx_x',
+                'vtx_y',
+                'vtx_z',
+                'muon_tracker',
+                'LepNuAngle',
+                'geoEffThrowResults',
+                'event',
+                'Ehad_veto',
+                'muon_endpoint']
+
+list_of_directories=["0mgsimple","0m","1.75m","2m","4m","5.75m","8m","9.75m","12m","13.75m","16m","17.75m","20m","21.75m","24m","25.75m",\
+                     "26.75m","28m","28.25m","28.5m","0mgsimpleRHC","0mRHC","1.75mRHC","2mRHC","4mRHC","5.75mRHC","8mRHC","9.75mRHC","12mRHC",\
+                     "13.75mRHC","16mRHC" "17.75mRHC","20mRHC","21.75mRHC","24mRHC","25.75mRHC","26.75mRHC","28mRHC","28.25mRHC","28.5mRHC"]
 
 #CAF_FHC_fName="/home/barwu/repos/MuonEffNN/FHC.1001666.CAF.root"
 #CAF_FHC_fName="/storage/shared/cvilela/CAF/ND_v7/03/FHC.10030*.CAF.root"
 #CAF_FHC_fName="/storage/shared/cvilela/CAF/ND_v7/*/FHC.*.CAF.root"
 #CAF_FHC_fName="/storage/shared/cvilela/CAF/ND_v7/0"+argv[1]+"/FHC.100"+argv[1]+"*.CAF.root"
-#CAF_FHC_fName="/storage/shared/cvilela/CAF/ND_v7/00/FHC.1000[1-2]*.CAF.root"
+#CAF_FHC_fName="/storage/shared/cvilela/CAF/ND_v7/00/FHC.1000[1-2]*.CAF.root"E
 #CAF_FHC_fName="/storage/shared/cvilela/CAF/ND_v7/0"+argv[1]+"/FHC.100"+argv[1]+argv[2]+"*.CAF.root"
 #CAF_RHC_fName="/storage/shared/cvilela/CAF/ND_v7/0"+argv[1]+"/RHC.100"+argv[1]+argv[2]+"*.CAF.root"
 #allFiles=glob(CAF_FHC_fName)
 #allFiles+=glob(CAF_RHC_fName)
 #prism_CAF_files="/storage/shared/wshi/CAFs/NDFHC_PRISM/"+argv[1]+argv[2]+"/FHC.10"+argv[1]+argv[2]+"*.CAF.root"
 #prism_CAF_files="/storage/shared/wshi/CAFs/NDFHC_PRISM/2[0,1,2]/FHC.102[0,1,2]*.CAF.root"
-prism_CAF_files="/storage/shared/barwu/10thTry/2m/2[4,5]/FHC.302[4,5]*.CAF.root"
+prism_CAF_files="/storage/shared/barwu/10thTry/NDCAF/4m/2[7-9]/FHC.502[7-9]*.CAF.root"
 allFiles=glob(prism_CAF_files) #file #s range from 0-29
 #cpu processing is set up later in the script
 
@@ -146,7 +140,7 @@ def processFiles(f):
     #f is only 1 file, each file get assigned to a different cpu
     #for f in f_list :
         #output="/home/barwu/repos/MuonEffNN/9thTry/test/"+splitext(basename(f))[0]+"_MuonEff.root" #need to come up with a new place to put the TTrees
-        output="/storage/shared/barwu/10thTry/combined1/2m/"+splitext(basename(f))[0]+"_Eff.root"
+        output="/storage/shared/barwu/10thTry/combined1/4m/"+splitext(basename(f))[0]+"_Eff.root"
         if exists(output)==True:
             #print("testing")
             return None
@@ -212,7 +206,6 @@ def processFiles(f):
                 bitfield = np.array([bitfield], dtype = np.uint64)
                 bitfield = np.unpackbits(np.array(bitfield, dtype='>i8').view(np.uint8)) #unpackbits converts a 256-basevalue nto an array of binary integers
                 bitfieldTemp = np.copy(bitfield)
-
                 # Annoyingly, the array is backwards. Invert array order...
                 for j_bitfield in range(len(bitfield)) :
                     bitfield[-(1+j_bitfield)] = bitfieldTemp[j_bitfield]
@@ -231,7 +224,6 @@ def processFiles(f):
                 throw_y = geoThrows["geoEffThrowsY"][int(i_event/N_EVENTS_PER_THROW)][i_bitfield*64:(i_bitfield+1)*64]-offset[1]
                 # Get z for each random throw
                 throw_z = geoThrows["geoEffThrowsZ"][int(i_event/N_EVENTS_PER_THROW)][i_bitfield*64:(i_bitfield+1)*64]-offset[2]
-
                 # Get rotation matrices from throws
                 # Get phi for each random throw
                 throw_phi = geoThrows["geoEffThrowsPhi"][int(i_event/N_EVENTS_PER_THROW)][i_bitfield*64:(i_bitfield+1)*64]
@@ -262,20 +254,16 @@ def processFiles(f):
                 #for angleval in translationAngle:
                     #if angleval<=-1 or angleval>=1: print(i_event, angleval)
                 translationAngle = np.arccos(translationAngle);
-
                 translationAxis = np.cross(decayToTranslated, decayToVertex)
                 translationAxis = [ thisV/np.linalg.norm(thisV) for thisV in translationAxis ]
-
                 translation_rot_vec = np.multiply(translationAxis, translationAngle[...,None])
 
                 decayToTranslated = [ thisV/np.linalg.norm(thisV) for thisV in decayToTranslated ]
-
                 phi_rot_vec = np.multiply(decayToTranslated, throw_phi[...,None])
                     
                 this_px = CAF["LepMomX"][i_event]
                 this_py = CAF["LepMomY"][i_event]
                 this_pz = CAF["LepMomZ"][i_event]
-
                 this_p = [this_px, this_py, this_pz] #lepton momentum list
 
                 # Get rotation matrices due to:
@@ -291,7 +279,6 @@ def processFiles(f):
                 # Features contains randomized momentum and vertex, ready to be used in neural network.
                 features = np.column_stack((this_p[:,0], this_p[:,1], this_p[:,2],
                                             throw_x, throw_y, throw_z))
-
                 # Convert to Pytorch tensor
                 features = torch.as_tensor(features).type(torch.FloatTensor)
 
@@ -345,10 +332,8 @@ def processFiles(f):
         had_containment = CAF["Ehad_veto"] < 30
         sel = np.logical_and(had_containment, fv)
         sel_tracker = np.logical_and(CAF['muon_tracker'] > 0, fv)
-
         isContained_vec = np.vectorize(isContained)
         sel_contained = np.logical_and(isContained_vec(CAF["muon_endpoint"][:,0], CAF["muon_endpoint"][:,1], CAF["muon_endpoint"][:,2]), fv)
-
         sel_combined = np.logical_and(np.logical_or(sel_tracker, sel_contained), sel)
 
         #print("Number in FV {0}, number contained {1}, number in FV and contained {2}".format(sum(fv), sum(had_containment), sum(sel)))
@@ -381,56 +366,55 @@ def processFiles(f):
 # NOTE: IF saving the efficiencies to ROOT TTree for further processing, this is the place to Fill the TTree with the effs[i_event] variables. This might interfere with multi-processing, so I recommend doing this only with NUM_PROCS set to 1.
         #output="/home/barwu/repos/MuonEffNN/9thTry/test/"+splitext(basename(f))[0]+"_MuonEff.root" #need to come up with a new place to put the TTrees
         with recreate(output) as tree:
-            tree["event_data"]=newtree({#'LepMomX':np.float64,
-                                        #'LepMomY':np.float64, 
-                                        #'LepMomZ':np.float64,
-                                        #'NuMomX':np.float64,
-                                        #'NuMomY':np.float64, 
-                                        #'NuMomZ':np.float64,
-                                        #'vtx_x':np.float64,
-                                        #'vtx_y':np.float64,
-                                        #'vtx_z':np.float64,
-                                        'isCC':np.int32,
-                                        'inFV':np.int32,
-                                        #'Ev':np.int32,
-                                        #'LepE':np.float64,
-                                        #'LepNuAngle':np.float64,
-                                        'cos_LepNuAngle':np.float64,
-                                        'TotMom':np.float64,
-                                        'LongMom':np.float64,
-                                        'muon_contained_eff':np.float64,
-                                        'muon_tracker_eff':np.float64,
-                                        #'muon_selected_eff':np.float64,
-                                        'hadron_selected_eff':np.float64,
-                                        'combined_eff':np.float64,
-                                        'hadron_selected':np.int32,
-                                        'muon_contained':np.int32,
-                                        'muon_tracker':np.int32,
-                                        'muon_selected':np.int32,
-                                        'combined':np.int32})
 
-            extend_dict={}
             #for var in ['LepMomX','LepMomY','LepMomZ','NuMomX','NuMomY','NuMomZ','vtx_x','vtx_y','vtx_z','isCC','Ev','LepE','LepNuAngle']: extend_dict[var]=CAF[var]
             totmom=np.sqrt(np.power(CAF['LepMomX'],2)+np.power(CAF['LepMomY'],2)+np.power(CAF['LepMomZ'],2))
             cosangle=np.cos(CAF['LepNuAngle'])
+            #effs_selected=np.reciprocal(np.reciprocal(effs_contained)+np.reciprocal(effs_tracker))
 
-            extend_dict['inFV']=CAF['inFV']
-            extend_dict['isCC']=CAF['isCC']
-            extend_dict['hadron_selected_eff']=effs
-            extend_dict['muon_contained_eff']=effs_contained
-            extend_dict['muon_tracker_eff']=effs_tracker
-            #extend_dict['muon_selected_eff']=np.reciprocal(np.reciprocal(effs_contained)+np.reciprocal(effs_tracker))
-            extend_dict['combined_eff']=effs_combined
-            extend_dict['hadron_selected']=sel
-            extend_dict['muon_contained']=sel_contained
-            extend_dict['muon_tracker']=sel_tracker
-            extend_dict['muon_selected']=np.add(sel_contained,sel_tracker)
-            extend_dict['combined']=sel_combined
-            extend_dict['TotMom']=totmom
-            extend_dict['cos_LepNuAngle']=cosangle
-            extend_dict['LongMom']=np.multiply(totmom,cosangle)
+            event_data=tree.mktree("event_data",{#'NuMomX':np.float64,
+                                                 #'NuMomY':np.float64, 
+                                                 #'NuMomZ':np.float64,
+                                                 'isCC':np.int32,
+                                                 'inFV':np.int32,
+                                                 #'Ev':np.int32,
+                                                 #'LepE':np.float64,
+                                                 #'LepNuAngle':np.float64,
+                                                 'cos_LepNuAngle':np.float64,
+                                                 'TotMom':np.float64,
+                                                 'LongMom':np.float64,
+                                                 'muon_contained_eff':np.float64,
+                                                 'muon_tracker_eff':np.float64,
+                                                 #'muon_selected_eff':np.float64,
+                                                 'hadron_selected_eff':np.float64,
+                                                 'combined_eff':np.float64,
+                                                 'hadron_selected':np.int32,
+                                                 'muon_contained':np.int32,
+                                                 'muon_tracker':np.int32,
+                                                 'muon_selected':np.int32,
+                                                 'combined':np.int32})
 
-            tree["event_data"].extend(extend_dict)
+            event_data.extend({#'NuMomX':CAF['NuMomX'],
+                               #'NuMomY':CAF['NuMomY'],
+                               #'NuMomZ':CAF['NuMomZ'],
+                               'isCC':CAF['isCC'],
+                               'inFV':CAF['inFV'],
+                               #'Ev':CAF['LepE'],
+                               #'LepE':CAF['LepE'],
+                               #'LepNuAngle':CAF['LepNuAngle'],
+                               'cos_LepNuAngle':cosangle,
+                               'TotMom':totmom,
+                               'LongMom':np.multiply(totmom,cosangle),
+                               'muon_contained_eff':effs_contained,
+                               'muon_tracker_eff':effs_tracker,
+                               #'muon_selected_eff':effs_selected,
+                               'hadron_selected_eff':effs,
+                               'combined_eff':effs_combined,
+                               'hadron_selected':sel,
+                               'muon_contained':sel_contained,
+                               'muon_tracker':sel_tracker,
+                               'muon_selected':np.add(sel_contained,sel_tracker),
+                               'combined':sel_combined})
 
 if __name__ == "__main__" :
 
@@ -441,7 +425,6 @@ if __name__ == "__main__" :
     #if len(allFiles) < NUM_PROCS :
         #print("Fewer files than processes, setting NUM_PROC to {0}".format(len(allFiles)))
         #NUM_PROCS = len(allFiles)
-
     #filesPerProc = int(np.ceil(float(len(allFiles))/NUM_PROCS))
     #print(filesPerProc, NUM_PROCS)
 
