@@ -106,7 +106,7 @@ list_of_directories=["0mgsimple","0m","1.75m","2m","4m","5.75m","8m","9.75m","12
 #allFiles+=glob(CAF_RHC_fName)
 #prism_CAF_files="/storage/shared/wshi/CAFs/NDFHC_PRISM/"+argv[1]+argv[2]+"/FHC.10"+argv[1]+argv[2]+"*.CAF.root"
 #prism_CAF_files="/storage/shared/wshi/CAFs/NDFHC_PRISM/2[0,1,2]/FHC.102[0,1,2]*.CAF.root"
-prism_CAF_files="/storage/shared/barwu/10thTry/NDCAF/4m/2[7-9]/FHC.502[7-9]*.CAF.root"
+prism_CAF_files="/storage/shared/barwu/10thTry/NDCAF/28m/*/FHC.290*.CAF.root"
 allFiles=glob(prism_CAF_files) #file #s range from 0-29
 #cpu processing is set up later in the script
 
@@ -140,7 +140,7 @@ def processFiles(f):
     #f is only 1 file, each file get assigned to a different cpu
     #for f in f_list :
         #output="/home/barwu/repos/MuonEffNN/9thTry/test/"+splitext(basename(f))[0]+"_MuonEff.root" #need to come up with a new place to put the TTrees
-        output="/storage/shared/barwu/10thTry/combined1/4m/"+splitext(basename(f))[0]+"_Eff.root"
+        output="/storage/shared/barwu/10thTry/combined1/28m/"+splitext(basename(f))[0]+"_Eff.root"
         if exists(output)==True:
             #print("testing")
             return None

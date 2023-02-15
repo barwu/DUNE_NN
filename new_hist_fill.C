@@ -43,7 +43,7 @@ int muon_cont, muon_tra, muon_sel, hadr, comb;
 double muon_cont_eff, muon_tra_eff, muon_sel_eff, hadr_eff, comb_eff;
 double x_pos, y_pos, z_pos, XLepMom, YLepMom, ZLepMom;
 double TotalMom, cos_angle, LongitudinalMom;
-list_of_directories[40]={"0mgsimple","0m","1.75m","2m","4m","5.75m","8m","9.75m","12m","13.75m","16m",
+const char* list_of_directories[40]={"0mgsimple","0m","1.75m","2m","4m","5.75m","8m","9.75m","12m","13.75m","16m",
 "17.75m","20m","21.75m","24m","25.75m","26.75m","28m","28.25m","28.5m","0mgsimpleRHC","0mRHC","1.75mRHC",
 "2mRHC","4mRHC","5.75mRHC","8mRHC","9.75mRHC","12mRHC","13.75mRHC","16mRHC","17.75mRHC","20mRHC",
 "21.75mRHC","24mRHC","25.75mRHC","26.75mRHC","28mRHC","28.25mRHC","28.5mRHC"};
@@ -110,6 +110,8 @@ void populate_histograms(char* eff,char* CAF,vector<TH1D*>hists1,vector<TH1D*>hi
     muon_sel_eff=muon_cont_eff+muon_tra_eff;
     if (muon_sel!=0&&muon_sel!=1) {
       cout<<"bad val for muon-selected check! "<<muon_sel<<endl;
+      cout<<"Event #"<<i<<" in file "<<eff<<endl;
+      cout<<"contained-"<<muon_cont<<", tracker-matched-"<<muon_tra<<endl;
       continue;
     }
 
@@ -156,12 +158,12 @@ void new_hist_fill()
     }
   }
 
-  for (int j=0; j<25022; j++)
+  for (int j=0; j<30000; j++)
   {
     memset(eff, 0, 99); // clear array each time
     memset(caf, 0, 99);
-    sprintf(eff,"/storage/shared/barwu/10thTry/combined1/4m/FHC.30%05d.CAF_Eff.root",j);
-    sprintf(caf,"/storage/shared/barwu/10thTry/4m/%02d/FHC.30%05d.CAF.root",j/1000,j);
+    sprintf(eff,"/storage/shared/barwu/10thTry/combined1/8m/FHC.90%05d.CAF_Eff.root",j);
+    sprintf(caf,"/storage/shared/barwu/10thTry/NDCAF/8m/%02d/FHC.90%05d.CAF.root",j/1000,j);
     //sprintf(eff,"/storage/shared/barwu/9thTry/eff_trees/FHC.100%04d.CAF_MuonEff.root",j);
     //sprintf(caf,"/storage/shared/cvilela/CAF/ND_v7/0%01d/FHC.100%04d.CAF.root",j/1000,j);
     if(access(eff, 0)==0)
@@ -189,13 +191,13 @@ void new_hist_fill()
       TVirtualPad *pad=c->cd(n+1);
       if (k%9==7) {pad->SetLogy();} //pad needs to be made logarithmic, not canvas
       TH1D *hist3=histograms3.at(n);
-      hist3->SetLineColor(kBlue);
+      hist3->SetLineColor(kPink);
       hist3->Draw("histS");
       TH1D *hist2=histograms2.at(n);
-      hist2->SetLineColor(kGreen);
+      hist2->SetLineColor(kOrange+10);
       hist2->Draw("samehistS");
       TH1D *hist1=histograms1.at(n);
-      hist1->SetLineColor(kRed);
+      hist1->SetLineColor(kOrange+7);
       hist1->Draw("samehistS");
 
       float max1=hist1->GetMaximum();
@@ -220,7 +222,7 @@ void new_hist_fill()
       n++;
     }
   }
-  c->SaveAs("/home/barwu/repos/MuonEffNN/images/4m_PRISM_hists_all.png");
+  //c->SaveAs("/home/barwu/repos/MuonEffNN/images/4m_PRISM_hists_all.png");
 
   TCanvas *cs[5];
   n=0;
@@ -240,10 +242,10 @@ void new_hist_fill()
       hist3->SetLineColor(kBlue);
       hist3->Draw("histS");
       TH1D *hist2=histograms2.at(n);
-      hist2->SetLineColor(kGreen);
+      hist2->SetLineColor(kTeal+10);
       hist2->Draw("samehistS");
       TH1D *hist1=histograms1.at(n);
-      hist1->SetLineColor(kRed);
+      hist1->SetLineColor(kPink);
       hist1->Draw("samehistS");
 
       float max1=hist1->GetMaximum();
@@ -268,7 +270,7 @@ void new_hist_fill()
       n++;
     }
     cs[i]->Update();
-    cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/4m_PRISM_hists_%s.png",dt));
+    //cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/4m_PRISM_hists_%s.png",dt));
     i++;
   }
 }
