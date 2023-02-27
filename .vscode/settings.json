@@ -2,6 +2,13 @@
     "files.associations": {
         "add_branches.C": "cpp",
         "generate_histograms.C": "cpp",
-        "new_hist_fill.C": "cpp"
+        "new_hist_fill.C": "cpp",
+        "array": "c",
+        "deque": "c",
+        "list": "c",
+        "vector": "c",
+        "string_view": "c",
+        "ranges": "c",
+        "string": "c"
     }
 }

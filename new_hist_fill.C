@@ -158,19 +158,21 @@ void new_hist_fill()
     }
   }
 
+  int directory_number=12;
+  cout<<directory_number<<endl;
   for (int j=0; j<30000; j++)
   {
     memset(eff, 0, 99); // clear array each time
     memset(caf, 0, 99);
-    sprintf(eff,"/storage/shared/barwu/10thTry/combined1/8m/FHC.90%05d.CAF_Eff.root",j);
-    sprintf(caf,"/storage/shared/barwu/10thTry/NDCAF/8m/%02d/FHC.90%05d.CAF.root",j/1000,j);
+    sprintf(eff,"/storage/shared/barwu/10thTry/combined1/%dm/FHC.%d0%05d.CAF_Eff.root",directory_number,directory_number+1,j);
+    sprintf(caf,"/storage/shared/barwu/10thTry/NDCAF/%dm/%02d/FHC.%d0%05d.CAF.root",directory_number,j/1000,directory_number+1,j);
     //sprintf(eff,"/storage/shared/barwu/9thTry/eff_trees/FHC.100%04d.CAF_MuonEff.root",j);
     //sprintf(caf,"/storage/shared/cvilela/CAF/ND_v7/0%01d/FHC.100%04d.CAF.root",j/1000,j);
     if(access(eff, 0)==0)
     {
       populate_histograms(eff,caf,histograms1,histograms2,histograms3);
     } else {
-      cout<<"Warning: missing file:"<<eff<<endl;
+      //cout<<"Warning: missing file:"<<eff<<endl;
       continue;
     }
   }
@@ -191,13 +193,14 @@ void new_hist_fill()
       TVirtualPad *pad=c->cd(n+1);
       if (k%9==7) {pad->SetLogy();} //pad needs to be made logarithmic, not canvas
       TH1D *hist3=histograms3.at(n);
-      hist3->SetLineColor(kPink);
+      hist3->SetLineColor(kBlue);
       hist3->Draw("histS");
       TH1D *hist2=histograms2.at(n);
-      hist2->SetLineColor(kOrange+10);
+      //hist2->SetLineColor(kGreen);
+      hist2->SetLineColor(kTeal+10);
       hist2->Draw("samehistS");
       TH1D *hist1=histograms1.at(n);
-      hist1->SetLineColor(kOrange+7);
+      hist1->SetLineColor(kPink);
       hist1->Draw("samehistS");
 
       float max1=hist1->GetMaximum();
@@ -222,7 +225,7 @@ void new_hist_fill()
       n++;
     }
   }
-  //c->SaveAs("/home/barwu/repos/MuonEffNN/images/4m_PRISM_hists_all.png");
+  //c->SaveAs("/home/barwu/repos/MuonEffNN/images/2m_PRISM_hists_all.png");
 
   TCanvas *cs[5];
   n=0;
@@ -242,6 +245,7 @@ void new_hist_fill()
       hist3->SetLineColor(kBlue);
       hist3->Draw("histS");
       TH1D *hist2=histograms2.at(n);
+      //hist2->SetLineColor(kGreen);
       hist2->SetLineColor(kTeal+10);
       hist2->Draw("samehistS");
       TH1D *hist1=histograms1.at(n);
@@ -270,7 +274,7 @@ void new_hist_fill()
       n++;
     }
     cs[i]->Update();
-    //cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/4m_PRISM_hists_%s.png",dt));
+    //cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/2m_PRISM_hists_%s.png",dt));
     i++;
   }
 }
