@@ -16,6 +16,7 @@ using namespace std;
 #include "TStyle.h"
 #include "TPaveStats.h"
 
+float max_value=0.;
 vector<vector<vector<double>>>* xyz_pos=nullptr;
 vector<vector<vector<double>>>* xyz_mom=nullptr;
 double numu_e=0;
@@ -39,13 +40,12 @@ struct Para
   double h;
   //vector<vector<vector<double>>>* field_value;
 };
-
 Para pr[]=
 {
-  {"LepMomZ", -1., 14.},
-  {"LepMomTot", 0., 16.},
-  {"ND_Gen_numu_E", 0., 10.},
-  {"ND_E_vis_true", 0., 10.}
+  {"LepMomZ", -1., 5.5},
+  {"LepMomTot", 0., 5.5},
+  {"ND_Gen_numu_E", 0., 5.5},
+  {"ND_E_vis_true", 0., 5.5}
 };
 
 struct sel_type
@@ -72,45 +72,51 @@ void populate_histograms(char* eff,char* caf,vector<vector<vector<TH1D*>>>& hist
   TFile eff_file(eff);
   TFile caf_file(caf);
   TTree *event_data=(TTree*)eff_file.Get("event_data");
-  TTree *thing=(TTree*)caf_file.Get("effTreeND");
-  //gSystem->Exec("rm -f AutoDict*vector*vector*vector*double*");
+  TTree *caf_tree=(TTree*)caf_file.Get("effTreeND");
   gInterpreter->GenerateDictionary("vector<vector<vector<double>>>", "vector");
   for(auto& sel:br) //efficiencies are in 3d array, but energy is in 1d array
   {
     event_data->SetBranchAddress(sel.eff_name, &(sel.eff_value));
   }
-  thing->SetBranchAddress("ND_OffAxis_Sim_mu_start_v_xyz_LAr", &xyz_pos);
-  thing->SetBranchAddress("ND_OffAxis_Sim_mu_start_p_xyz_LAr", &xyz_mom);
-  thing->SetBranchAddress("ND_Gen_numu_E", &numu_e);
-  thing->SetBranchAddress("ND_E_vis_true", &e_vis_true);
+  caf_tree->SetBranchAddress("ND_OffAxis_Sim_mu_start_v_xyz_LAr", &xyz_pos);
+  caf_tree->SetBranchAddress("ND_OffAxis_Sim_mu_start_p_xyz_LAr", &xyz_mom);
+  caf_tree->SetBranchAddress("ND_Gen_numu_E", &numu_e);
+  caf_tree->SetBranchAddress("ND_E_vis_true", &e_vis_true);
 
   Long64_t nentries1=event_data->GetEntries();
-  Long64_t nentries2=thing->GetEntries();
+  Long64_t nentries2=caf_tree->GetEntries();
   if (nentries1!=nentries2) {cout<<"The efficiency file"<<eff<<"has"<<nentries2
   <<" events, and the CAF file"<<caf<<"has"<<nentries1<<"events."<<endl;}
   for (int i=0;i<nentries2;i++) {
     event_data->GetEntry(i);
-    thing->GetEntry(i);
+    caf_tree->GetEntry(i);
     unsigned long lar_pos=14;
     int k=0;
     for (Para item:pr) {
-      double position=0.0;
-      if (k==2) {position=numu_e;}
-      if (k==3) {position=e_vis_true;}
+      double variable_type=0.0;
+      if (k==2) {variable_type=numu_e;}
+      if (k==3) {variable_type=e_vis_true;}
+      /*if ((k==3)&&(max_value<variable_type)) {
+	max_value=variable_type;
+        cout<<max_value<<", ";
+	}*/
 
       for (unsigned long vtx_pos=0;vtx_pos<NUM_VTX;vtx_pos++) {
-	    int n=0;
+	      int n=0;
         for (auto& sel:br) {
           TH1D* hist1=hists1[n][vtx_pos][k];
           TH1D* hist2=hists2[n][vtx_pos][k];
           n++;
           if (k==0) {
-            position=(*xyz_mom)[lar_pos][vtx_pos][2];
+            variable_type=(*xyz_mom)[lar_pos][vtx_pos][2];
           } else if (k==1) {
-            position=sqrt(pow((*xyz_pos)[lar_pos][vtx_pos][0],2)+pow((*xyz_pos)[lar_pos][vtx_pos][1],2)
-              +pow((*xyz_pos)[lar_pos][vtx_pos][2],2));
-          }
-          //if (k==1) {cout<<position<<" ";}
+            variable_type=sqrt(pow((*xyz_mom)[lar_pos][vtx_pos][0],2)+pow((*xyz_mom)[lar_pos][vtx_pos][1],2)
+              +pow((*xyz_mom)[lar_pos][vtx_pos][2],2));
+          }/*
+	  if ((k==1)&&(max_value<variable_type)) {
+	    max_value=variable_type;
+	    cout<<max_value<<", ";
+	    }*/
           vector<vector<double>>* eff_value=sel.eff_value;
           vector<vector<double>>& eff_value2=*eff_value;
           double geo_eff=eff_value2[lar_pos][vtx_pos];
@@ -118,8 +124,8 @@ void populate_histograms(char* eff,char* caf,vector<vector<vector<TH1D*>>>& hist
             cout<<"efficiency of event "<<i<<" at position "<<LAr_position[lar_pos]<<", "
             <<vertex_position[vtx_pos]<<" is "<<geo_eff<<endl;
           }
-          hist1->Fill(position);
-          hist2->Fill(position, geo_eff);
+          hist1->Fill(variable_type);
+          hist2->Fill(variable_type, geo_eff);
         }
       }
       k++;
@@ -158,7 +164,7 @@ void FD_position_selection_histograms()
     }
   }
 
-  for (int j=0; j<1; j++)
+  for (int j=0; j<10; j++)
   {
     memset(eff, 0, 99); // clear array each time
     memset(caf, 0, 99);
@@ -175,30 +181,31 @@ void FD_position_selection_histograms()
 
   //gStyle->SetOptStat(000000000);
   gStyle->SetOptStat(111111111);
-  TCanvas *cs[5];
-  TCanvas *rs[5];
-  int i_select=1;
-  for (auto& sel:br)
+  TCanvas *cs[22];
+  TCanvas *rs[22];
+  for (int vtx_pos=0;vtx_pos<NUM_VTX;vtx_pos++)
   {
-    const char *dt=sel.sel_name;
-    cs[i_select-1]=new TCanvas(Form("c%01d",i_select),dt,2000,1000);
-    cs[i_select-1]->Divide(11,8);
-    rs[i_select-1]=new TCanvas(Form("r%01d",i_select),dt,2000,1000);
-    rs[i_select-1]->Divide(11,8);
+    cs[vtx_pos]=new TCanvas(Form("c%02d",vtx_pos),Form("vertex position=%f cm",vertex_position[vtx_pos]),2000,1000);
+    cs[vtx_pos]->Divide(5,4);
+    rs[vtx_pos]=new TCanvas(Form("r%02d",vtx_pos),Form("vertex position=%f cm",vertex_position[vtx_pos]),2000,1000);
+    rs[vtx_pos]->Divide(5,4);
+
     int n=1;
-    for (int vtx_pos=0;vtx_pos<NUM_VTX;vtx_pos++)
+    int i=0;
+    for (Para& item:pr)
     {
-      int i=0;
-      for(Para& item:pr)
+      const char *fd=item.field;
+      int i_select=0;
+      for(auto sel:br)
       {
-        const char *fd=item.field;
+        const char *dt=sel.sel_name;
         double lowerbound=item.l;
         double upperbound=item.h;
-        cs[i_select-1]->cd(n);
-        TH1D *hist2=histograms2[i_select-1][vtx_pos][i];
+        cs[vtx_pos]->cd(n);
+        TH1D *hist2=histograms2[i_select][vtx_pos][i];
         hist2->SetLineColor(kTeal-3);
         hist2->Draw("hist");
-        TH1D *hist1=histograms1[i_select-1][vtx_pos][i];
+        TH1D *hist1=histograms1[i_select][vtx_pos][i];
         hist1->SetLineColor(kPink);
         hist1->Draw("samehist");
 
@@ -214,21 +221,21 @@ void FD_position_selection_histograms()
         leg->AddEntry(hist2, "selection-cut distribution");
         leg->Draw();
 
-        rs[i_select-1]->cd(n);
+        rs[vtx_pos]->cd(n);
         TH1D *rplot=(TH1D*)hist2->Clone();
         rplot->Divide(hist1);
         //rplot->SetAxisRange(0.,scale[(i_select-1)*44+n-1],"Y");
-        rplot->SetAxisRange(0.,1.,"Y");
+        rplot->SetAxisRange(0.,1.05,"Y");
         rplot->SetLineColor(kBlue);
         rplot->Draw("hist");
-        i++;
+        i_select++;
         n++;
       }
+      i++;
     }
-    cs[i_select-1]->Update();
-    rs[i_select-1]->Update();
-    //cs[i_select-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/10thTry/FD_%s_hists.png", dt));
-    //rs[i_select-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/10thTry/FD_%s_hists_ratios.png", dt));
-    i_select++;
+    cs[vtx_pos]->Update();
+    rs[vtx_pos]->Update();
+    cs[vtx_pos]->SaveAs(Form("/home/barwu/repos/MuonEffNN/10thTry/FD_hists_vtx=%f_cm.png", vertex_position[vtx_pos]));
+    rs[vtx_pos]->SaveAs(Form("/home/barwu/repos/MuonEffNN/10thTry/FD_hists_ratios_vtx=%f_cm.png", vertex_position[vtx_pos]));
   }
 }
