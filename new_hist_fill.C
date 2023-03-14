@@ -98,7 +98,7 @@ void populate_histograms(char* eff,char* CAF,vector<TH1D*>hists1,vector<TH1D*>hi
   <<" events, and the CAF file"<<CAF<<"has"<<nentries1<<"events."<<endl;}
   for (int i=0;i<nentries2;i++) {
     caf->GetEntry(i);
-    event_data->GetEntry(i); 
+    event_data->GetEntry(i);
     int sel_cut=isCC*inFV;
     if (sel_cut==0) {continue;}
     if (sel_cut!=1) {
