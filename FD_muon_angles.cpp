@@ -28,7 +28,7 @@ void populate_histograms(char* caf,TH1D* hists[22],int j)
     unsigned long lar_pos=14;
     for (unsigned long vtx_pos=0;vtx_pos<NUM_VTX;vtx_pos++) {
       TH1D* hist=hists[vtx_pos];
-      double cross_sectional_angle=atan((*xyz_mom)[lar_pos][vtx_pos][1]/(*xyz_mom)[lar_pos][vtx_pos][2]);
+      double cross_sectional_angle=180/3.14159265358979323846*atan((*xyz_mom)[lar_pos][vtx_pos][1]/(*xyz_mom)[lar_pos][vtx_pos][2]);
       hist->Fill(cross_sectional_angle);
     }
   }
@@ -42,7 +42,7 @@ void FD_muon_angles()
   for (int vtx_pos=0;vtx_pos<NUM_VTX;vtx_pos++)
   {
     pos_selected_hists[vtx_pos]=new TH1D(Form("c%d", vtx_pos+1), Form("cross-sectional angle at %f cm",vertex_position[vtx_pos]),
-    200, -3.14159265358979323846, 3.14159265358979323846);
+    200, -100, 100);
   }
 
   for (int j=0; j<10; j++)
@@ -64,9 +64,9 @@ void FD_muon_angles()
     float max1=hist->GetMaximum();
     hist->SetAxisRange(0.,1.16*max1,"Y");
     //hist->SetTitle(Form("%s %s Selection Cut", fd, dt));
-    hist->GetXaxis()->SetTitle("Muon angle (radians)");
+    hist->GetXaxis()->SetTitle("Muon angle (degrees)");
     hist->GetYaxis()->SetTitle("# of events");
   }
   c->Update();
-  c->SaveAs("/home/barwu/repos/MuonEffNN/10thTry/FD_on-axis_muon_angle_hists_radians.png");
+  c->SaveAs("/home/barwu/repos/MuonEffNN/10thTry/FD_on-axis_muon_angle_hists_degrees.png");
 }
