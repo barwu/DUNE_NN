@@ -9,6 +9,8 @@
         "vector": "c",
         "string_view": "c",
         "ranges": "c",
-        "string": "c"
+        "string": "c",
+        "new": "cpp",
+        "energy_compare.C": "cpp"
     }
 }

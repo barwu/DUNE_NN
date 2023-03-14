@@ -90,11 +90,11 @@ void populate_histograms(char* eff,char* caf,TH1D* hists[2][10],int j)
             hist1->Fill(*item.field_value);
             vector<vector<double>> eff_value2=*(hadr_eff);
             double geo_eff=eff_value2[lar_pos][vtx_pos];
-            cout<<"geoeff="<<geo_eff<<endl;
+            //cout<<"geoeff="<<geo_eff<<endl;
             if (geo_eff<=0.001) {
               hist2->Fill(*item.field_value,0.);
             } else {
-              hist2->Fill(*item.field_value,1/geo_eff);
+              hist2->Fill(*item.field_value,geo_eff);
 	          }
           }
         }
@@ -120,7 +120,7 @@ void FD_energy_histograms()
       double l=item.l;
       double h=item.h;
       histograms[0][m]=new TH1D(Form("h1_%s_%s", fd, dt), Form("raw %s %s",fd, dt), 100, l, h);
-      histograms[1][m]=new TH1D(Form("h3_%s_%s", fd, dt), Form("geo corrected %s %s",fd, dt), 100, l, h);
+      histograms[1][m]=new TH1D(Form("h2_%s_%s", fd, dt), Form("selection-cut %s %s",fd, dt), 100, l, h);
       m++;
     }
   }
@@ -154,7 +154,7 @@ void FD_energy_histograms()
       const char *dt=sel.sel_name;
       c->cd(2*i-1);
       TH1D *hist2=histograms[1][n];
-      hist2->SetLineColor(kAzure);
+      hist2->SetLineColor(kTeal-3);
       hist2->Draw("samehistS");
       TH1D *hist1=histograms[0][n];
       hist1->SetLineColor(kPink);
@@ -164,25 +164,25 @@ void FD_energy_histograms()
       float max2=hist2->GetMaximum();
       float upper_y_bound=max(max2, max1)*1.2;
       hist2->SetAxisRange(0.,upper_y_bound,"Y");
-      hist2->SetTitle(Form("%s: %s",fd,dt));
+      hist2->SetTitle(Form("FD_in_%s: %s",fd,dt));
       hist2->GetXaxis()->SetTitle(Form("%s (GeV)",fd));
       hist2->GetYaxis()->SetTitle("# of events");
       TLegend *leg=new TLegend(0.1,0.8,0.35,0.9);
       leg->SetHeader("comparison"); 
       leg->AddEntry(hist1, "raw distribution");
-      leg->AddEntry(hist2, "geo corrected distribution");
+      leg->AddEntry(hist2, "selection-cut distribution");
       leg->Draw();
 
       c->cd(2*i);
       TH1D *rplot=(TH1D*)hist2->Clone();
       rplot->Divide(hist1);
       rplot->SetTitle(Form("%s: %s ratio plot",fd,dt));
-      rplot->SetAxisRange(0.,5.,"Y");
+      rplot->SetAxisRange(0.,1.005,"Y");
       rplot->SetLineColor(kBlue);
       rplot->Draw("hist");
       n++;
     }
     c->Update();
   }
-  //c->SaveAs("/home/barwu/repos/MuonEffNN/10thTry/FD_energy_hists_vtx_edges4.png");
+  c->SaveAs("/home/barwu/repos/MuonEffNN/10thTry/FD_in_ND_energy_hists_old.png");
 }

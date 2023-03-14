@@ -17,7 +17,6 @@ using namespace std;
 #include "TPaveStats.h"
 
 float max_value=0.;
-vector<vector<vector<double>>>* xyz_pos=nullptr;
 vector<vector<vector<double>>>* xyz_mom=nullptr;
 double numu_e=0;
 double e_vis_true=0;
@@ -42,10 +41,10 @@ struct Para
 };
 Para pr[]=
 {
-  {"LepMomZ", -1., 5.5},
+  {"LepMomZ", -0.3, 5.5},
   {"LepMomTot", 0., 5.5},
-  {"ND_Gen_numu_E", 0., 5.5},
-  {"ND_E_vis_true", 0., 5.5}
+  {"ND_Gen_numu_E", 0., 5.8},
+  {"ND_E_vis_true", 0., 5.8}
 };
 
 struct sel_type
@@ -78,7 +77,6 @@ void populate_histograms(char* eff,char* caf,vector<vector<vector<TH1D*>>>& hist
   {
     event_data->SetBranchAddress(sel.eff_name, &(sel.eff_value));
   }
-  caf_tree->SetBranchAddress("ND_OffAxis_Sim_mu_start_v_xyz_LAr", &xyz_pos);
   caf_tree->SetBranchAddress("ND_OffAxis_Sim_mu_start_p_xyz_LAr", &xyz_mom);
   caf_tree->SetBranchAddress("ND_Gen_numu_E", &numu_e);
   caf_tree->SetBranchAddress("ND_E_vis_true", &e_vis_true);

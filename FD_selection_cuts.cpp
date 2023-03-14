@@ -101,9 +101,9 @@ void populate_histograms(char* eff,char* caf,vector<vector<TH1D*>>& hists1,vecto
     unsigned long lar_pos=14;
     int k=0;
     for (Para item:pr) {
-      double position=0.0;
-      if (k==7) {position=numu_e;}
-      if (k==8) {position=e_vis_true;}
+      double var_type=0.0;
+      if (k==7) {var_type=numu_e;}
+      if (k==8) {var_type=e_vis_true;}
 
       for (unsigned long vtx_pos=0;vtx_pos<NUM_VTX;vtx_pos++) {
 	      int n=0;
@@ -112,14 +112,14 @@ void populate_histograms(char* eff,char* caf,vector<vector<TH1D*>>& hists1,vecto
           TH1D* hist2=hists2[n][k];
           n++;
           if (k<3) {
-            position=(*xyz_pos)[lar_pos][vtx_pos][k];
+            var_type=(*xyz_pos)[lar_pos][vtx_pos][k];
           } else if (k<6) {
-            position=(*xyz_mom)[lar_pos][vtx_pos][k-3];
+            var_type=(*xyz_mom)[lar_pos][vtx_pos][k-3];
           } else if (k==6) {
-            position=sqrt(pow((*xyz_pos)[lar_pos][vtx_pos][0],2)+pow((*xyz_pos)[lar_pos][vtx_pos][1],2)
-              +pow((*xyz_pos)[lar_pos][vtx_pos][2],2));
+            var_type=sqrt(pow((*xyz_mom)[lar_pos][vtx_pos][0],2)+pow((*xyz_mom)[lar_pos][vtx_pos][1],2)
+              +pow((*xyz_mom)[lar_pos][vtx_pos][2],2));
           }
-          //if (k==1) {cout<<position<<" ";}
+          //if (k==1) {cout<<var_type<<" ";}
           vector<vector<double>>* eff_value=sel.eff_value;
           vector<vector<double>>& eff_value2=*eff_value;
           double geo_eff=eff_value2[lar_pos][vtx_pos];
@@ -127,8 +127,8 @@ void populate_histograms(char* eff,char* caf,vector<vector<TH1D*>>& hists1,vecto
             cout<<"efficiency of event "<<i<<" at position "<<LAr_position[lar_pos]<<", "
             <<vertex_position[vtx_pos]<<" is "<<geo_eff<<endl;
           }
-          hist1->Fill(position);
-          hist2->Fill(position, geo_eff);
+          hist1->Fill(var_type);
+          hist2->Fill(var_type, geo_eff);
         }
       }
       k++;
