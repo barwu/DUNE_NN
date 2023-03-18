@@ -96,10 +96,6 @@ list_of_directories=["0mgsimple","0m","1.75m","2m","4m","5.75m","8m","9.75m","12
                      "26.75m","28m","28.25m","28.5m","0mgsimpleRHC","0mRHC","1.75mRHC","2mRHC","4mRHC","5.75mRHC","8mRHC","9.75mRHC","12mRHC",\
                      "13.75mRHC","16mRHC" "17.75mRHC","20mRHC","21.75mRHC","24mRHC","25.75mRHC","26.75mRHC","28mRHC","28.25mRHC","28.5mRHC"]
 
-#CAF_FHC_fName="/home/barwu/repos/MuonEffNN/FHC.1001666.CAF.root"
-#CAF_FHC_fName="/storage/shared/cvilela/CAF/ND_v7/03/FHC.10030*.CAF.root"
-#CAF_FHC_fName="/storage/shared/cvilela/CAF/ND_v7/*/FHC.*.CAF.root"
-#CAF_FHC_fName="/storage/shared/cvilela/CAF/ND_v7/0"+argv[1]+"/FHC.100"+argv[1]+"*.CAF.root"
 #CAF_FHC_fName="/storage/shared/cvilela/CAF/ND_v7/00/FHC.1000[1-2]*.CAF.root"E
 #CAF_FHC_fName="/storage/shared/cvilela/CAF/ND_v7/0"+argv[1]+"/FHC.100"+argv[1]+argv[2]+"*.CAF.root"
 #CAF_RHC_fName="/storage/shared/cvilela/CAF/ND_v7/0"+argv[1]+"/RHC.100"+argv[1]+argv[2]+"*.CAF.root"
@@ -107,6 +103,8 @@ list_of_directories=["0mgsimple","0m","1.75m","2m","4m","5.75m","8m","9.75m","12
 #allFiles+=glob(CAF_RHC_fName)
 #prism_CAF_files="/storage/shared/wshi/CAFs/NDFHC_PRISM/"+argv[1]+argv[2]+"/FHC.10"+argv[1]+argv[2]+"*.CAF.root"
 #prism_CAF_files="/storage/shared/wshi/CAFs/NDFHC_PRISM/2[0,1,2]/FHC.102[0,1,2]*.CAF.root"
+#prism_CAF_files="/storage/shared/wshi/CAFs/NDFHC_PRISM/29/FHC.1029585.CAF.root"
+#prism_CAF_files="/storage/shared/wshi/CAFs/NDCAF/2m/FHC.1018172.CAF.root"
 prism_CAF_files="/storage/shared/barwu/10thTry/NDCAF/"+argv[1]+"/*.CAF.root"
 allFiles=glob(prism_CAF_files) #file #s range from 0-29
 #cpu processing is set up later in the script
@@ -141,7 +139,7 @@ def processFiles(f):
     #f is only 1 file, each file get assigned to a different cpu
     #for f in f_list :
         #output="/home/barwu/repos/MuonEffNN/9thTry/test/"+splitext(basename(f))[0]+"_MuonEff.root" #need to come up with a new place to put the TTrees
-        output="/storage/shared/barwu/10thTry/combined1/"+argv[1]+"/"+splitext(basename(f))[0]+"_Eff.root"
+        output="/storage/shared/barwu/10thTry/combined1/"+argv[1]+splitext(basename(f))[0]+"_Eff.root"
         if exists(output)==True:
             #print("testing")
             return None
@@ -176,8 +174,8 @@ def processFiles(f):
 
         # Event loop
         for i_event in range(len(CAF['geoEffThrowResults'])):
-            #if i_event==10: break #use when debugging
-        #for i_event in range(200) :
+        #     if i_event==10: break #use when debugging
+        # for i_event in [2991]:
             #print(i_event)
 
             # Accumulators for efficiency calculation
@@ -338,6 +336,11 @@ def processFiles(f):
         isContained_vec = np.vectorize(isContained)
         sel_contained = np.logical_and(isContained_vec(CAF["muon_endpoint"][:,0], CAF["muon_endpoint"][:,1], CAF["muon_endpoint"][:,2]), fv)
         sel_combined = np.logical_and(np.logical_or(sel_tracker, sel_contained), sel)
+        for i_event in range(len(sel_contained)):
+            if ((sel_contained[i_event]==True) and (sel_tracker[i_event]==True)):
+                print("event #", end="")
+                print(i_event, end=" ")
+                print("in file "+f+" is both contained and tracker-matched!")
 
         #print("Number in FV {0}, number contained {1}, number in FV and contained {2}".format(sum(fv), sum(had_containment), sum(sel)))
 
@@ -435,6 +438,6 @@ if __name__ == "__main__" :
     pool.map(processFiles, allFiles)
         #don't use multiprocessing for debugging
     #for file in allFiles:
-    #   processFiles(file)
+    #  processFiles(file)
     #processFiles("/storage/shared/cvilela/CAF/ND_v7/00/FHC.1000999.CAF.root")
     #processFiles("/storage/shared/wshi/CAFs/NDFHC_PRISM/03/FHC.1003999.CAF.root")

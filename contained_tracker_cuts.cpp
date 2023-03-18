@@ -260,7 +260,7 @@ void contained_tracker_cuts()
       hist3->GetXaxis()->SetTitle("Energy (GeV)");
       hist3->GetYaxis()->SetTitle("# of events");
       TLegend *leg1=new TLegend(0.1,0.8,0.35,0.9);
-      leg1->SetHeader("comparison"); 
+      leg1->SetHeader("comparison");
       leg1->AddEntry(hist1, "raw distribution");
       leg1->AddEntry(hist2, "selection-cut distribution");
       leg1->AddEntry(hist3, "geo corrected distribution");

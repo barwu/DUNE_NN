@@ -158,9 +158,9 @@ void new_hist_fill()
     }
   }
 
-  int directory_number=12;
+  int directory_number=4;
   cout<<directory_number<<endl;
-  for (int j=0; j<30000; j++)
+  for (int j=3777; j<3778; j++)
   {
     memset(eff, 0, 99); // clear array each time
     memset(caf, 0, 99);
