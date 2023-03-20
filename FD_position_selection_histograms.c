@@ -193,12 +193,12 @@ void FD_position_selection_histograms()
     for (Para& item:pr)
     {
       const char *fd=item.field;
+      double lowerbound=item.l;
+      double upperbound=item.h;
       int i_select=0;
       for(auto sel:br)
       {
         const char *dt=sel.sel_name;
-        double lowerbound=item.l;
-        double upperbound=item.h;
         cs[vtx_pos]->cd(n);
         TH1D *hist2=histograms2[i_select][vtx_pos][i];
         hist2->SetLineColor(kTeal-3);
