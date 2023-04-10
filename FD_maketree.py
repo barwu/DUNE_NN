@@ -76,11 +76,11 @@ TreeVars=["ND_OffAxis_Sim_mu_start_v_xyz_LAr", "ND_OffAxis_Sim_mu_start_p_xyz_LA
 # f is only 1 file, each file get assigned to a different cpu
 def processFiles(f):
     # output="/storage/shared/barwu/10thTry/FDEff/"+splitext(basename(f))[0]+"_Eff.root"
-    output="/storage/shared/barwu/10thTry/FDEff/"+splitext(basename(f))[0]+"_Eff.root"
-    print(output)
-    if exists(output)==True:
-    #    print("testing")
-        return None
+    output="/storage/shared/barwu/10thTry/"+splitext(basename(f))[0]+"_Eff.root"
+    # print(output)
+    # if exists(output)==True:
+    #     print("testing")
+    #     return None
     try:
         # Get effTree TTree
         effTree=concatenate("{0}:effTreeND".format(f), TreeVars, library="np")
@@ -91,7 +91,7 @@ def processFiles(f):
         #continue
     # Get tree with x, y and phi of geometric efficiency throws.
     throwsFD=concatenate("{0}:ThrowsFD".format(f), ['throwVtxY', 'throwVtxZ', 'throwRot'], library="np")
-    effValues=concatenate("{0}:effValues".format(f), ['ND_LAr_dtctr_pos', 'ND_LAr_vtx_pos'], library="np")
+    #effValues=concatenate("{0}:effValues".format(f), ['ND_LAr_dtctr_pos', 'ND_LAr_vtx_pos'], library="np")
     #print(f)
 
     effs=std.vector(std.vector('double'))()
@@ -109,7 +109,10 @@ def processFiles(f):
     tree.Branch("combined_eff", effs_combined)
 
     # Event loop
-    for i_event in range(len(effTree['hadron_throw_result_LAr'])):
+    #for i_event in range(len(effTree['hadron_throw_result_LAr'])):
+    for i_event in [28]:
+        num_0_effs=0
+        num_high_effs=0
         event=effTree['hadron_throw_result_LAr'][i_event]
         #print("i_event=",end="")
         #print(i_event)
@@ -140,8 +143,7 @@ def processFiles(f):
                 thisEff_contained=0. # Contained muon efficiency
                 thisEff_combined=0. # Combined efficiency
 
-                this_vtx_x=effTree["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][0]-\
-                        LAr_position[det_pos]
+                this_vtx_x=effTree["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][0]-LAr_position[det_pos]
                 this_vtx_y=effTree["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][1]
                 this_vtx_z=effTree["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][2]
                 this_p=effTree["ND_OffAxis_Sim_mu_start_p_xyz_LAr"][i_event][det_pos][vtx_pos]
@@ -166,6 +168,9 @@ def processFiles(f):
                     effs_combined.back().push_back(-1.)
                     continue
 
+                if (det_pos==14):
+                    print("throw #; y pos (cm); z pos (cm); throw rotation angle (rad); contained eff; tracker eff; z-momentum (GeV/c)")
+                throw_number=1
                 # Loop through the hadronic geometric efficiency throw results. Each bitfield corresponds to 64 throws.
                 # Hadronic veto bits are grouped into 64, to prevent processing overload for the neural network.
                 for i_bitfield, bitfield in enumerate(event[det_pos][vtx_pos][0][0]):
@@ -259,6 +264,19 @@ def processFiles(f):
                         thisEff_tracker+=np.sum(nnTracker)
                         thisEff_contained+=np.sum(nnContained)
                         thisEff_combined+=np.sum(combinedEfficiency)
+                        
+                    for i in range(64):
+                        if (det_pos==14):
+                            print(throw_number, end="; ")
+                            print(throw_y[i], end="; ")
+                            print(throw_z[i], end="; ")
+                            print(throw_phi[i], end="; ")
+                            print(nnContained[i], end="; ")
+                            print(nnTracker[i], end="; ")
+                            print(this_p[i,2])
+                            if nnTracker[i]<0.01: num_0_effs+=1
+                            if nnTracker[i]>0.9: num_high_effs+=1
+                            throw_number+=1
 
                 # print("event ",end="#")
                 # print(i_event,end=", ")
@@ -282,7 +300,14 @@ def processFiles(f):
 
         #print("still running")
         tree.Fill()
-    print("")
+        print("\n")
+        print("low effs", end=": ")
+        print(num_0_effs)
+        print("high effs", end=": ")
+        print(num_high_effs)
+        print("geometric tracker efficiency", end=": ")
+        print(thisEff_tracker/NthrowsInFV)
+        print("\n")
     tree.Write()
     tf.Close()
 
@@ -300,9 +325,9 @@ if __name__=="__main__":
     #filesPerProc=int(np.ceil(float(len(allFiles))/NUM_PROCS))
     #print(filesPerProc, NUM_PROCS)
 
-    pool=Pool(NUM_PROCS)
-    pool.map(processFiles, allFiles)
+    #ool=Pool(NUM_PROCS)
+    #pool.map(processFiles, allFiles)
         #don't use multiprocessing for debugging
     #for file in allFiles:
         #processFiles(file)
-    #processFiles("/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_990.root")
+    processFiles("/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_999.root")

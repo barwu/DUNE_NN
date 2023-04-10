@@ -139,7 +139,7 @@ def processFiles(f):
     #f is only 1 file, each file get assigned to a different cpu
     #for f in f_list :
         #output="/home/barwu/repos/MuonEffNN/9thTry/test/"+splitext(basename(f))[0]+"_MuonEff.root" #need to come up with a new place to put the TTrees
-        output="/storage/shared/barwu/10thTry/combined1/"+argv[1]+splitext(basename(f))[0]+"_Eff.root"
+        output="/storage/shared/barwu/10thTry/combined1/"+argv[1]+"/"+splitext(basename(f))[0]+"_Eff.root"
         if exists(output)==True:
             #print("testing")
             return None

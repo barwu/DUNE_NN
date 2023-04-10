@@ -26,7 +26,7 @@ double vertex_position[NUM_VTX]={-299.,-292.,-285.,-278.,-271.,-264.,-216.,-168.
                       278.,285.,292.,299.};
 double total_detected[5][NUM_LAR_DTR][NUM_VTX]={};
 //float scale[30]={.19,.18,.18,.7,.7,1.05,.04,.034,.034,.07,.07,.07,.23,.21,.21,.73,.65,1.05,1.,1.,1.,1.05,1.05,1.05,.23,.2,.2,.7,.7,1.};
-float scale[45]={.19,.18,.18,.7,.7,1.05,1.,1.05,1.,.04,.034,.034,.07,.07,.07,1.,.075,.075,.23,.21,.21,.73,.65,1.05,1.,1.05,1.05,1.,
+float scale[45]={.19,.18,.18,.7,.7,1.05,1.,1.05,1.,.04,.034,.034,.07,.07,.07,.075,.075,.075,.23,.21,.21,.73,.65,1.05,1.,1.05,1.05,1.,
                 1.,1.,1.05,1.05,1.05,1.,1.05,1.05,.23,.2,.2,.7,.7,1.,1.,1.05,1.};
 
 struct Para
@@ -51,8 +51,8 @@ Para pr[]=
   {"LepMomTot", 0., 16.},
   //{"LepNuAngle", 0., 1.}
   //{"LongMom", 0., 16.}
-  {"ND_Gen_numu_E", 0., 10.},
-  {"ND_E_vis_true", 0., 10.}
+  {"ND_Gen_numu_E", 6., 16.},
+  {"ND_E_vis_true", 6., 16.}
 };
 
 struct sel_type
@@ -76,6 +76,7 @@ vector<sel_type> br=
 
 void populate_histograms(char* eff,char* caf,vector<vector<TH1D*>>& hists1,vector<vector<TH1D*>>& hists2,int j)
 {
+  cout<<endl<<caf<<endl;
   TFile eff_file(eff);
   TFile caf_file(caf);
   TTree *event_data=(TTree*)eff_file.Get("event_data");
@@ -95,17 +96,31 @@ void populate_histograms(char* eff,char* caf,vector<vector<TH1D*>>& hists1,vecto
   Long64_t nentries2=thing->GetEntries();
   if (nentries1!=nentries2) {cout<<"The efficiency file"<<eff<<"has"<<nentries2
   <<" events, and the CAF file"<<caf<<"has"<<nentries1<<"events."<<endl;}
+  cout<<"event #; ";
+  for (Para item:pr) {
+    const char *fd=item.field;
+    cout<<fd<<"; ";
+  }
   for (int i=0;i<nentries2;i++) {
     event_data->GetEntry(i);
     thing->GetEntry(i);
+    double var_type=e_vis_true;
+    if (var_type<6) {continue;}
+    cout<<endl<<i<<"; ";
     unsigned long lar_pos=14;
     int k=0;
     for (Para item:pr) {
-      double var_type=0.0;
+      double xz_mom_angle=0.;
+      double yz_mom_angle=0.;
       if (k==7) {var_type=numu_e;}
-      if (k==8) {var_type=e_vis_true;}
-
+      //if (k==8) {var_type=e_vis_true;}
       for (unsigned long vtx_pos=0;vtx_pos<NUM_VTX;vtx_pos++) {
+        if (abs(atan((*xyz_mom)[lar_pos][vtx_pos][0]/(*xyz_mom)[lar_pos][vtx_pos][2]))>xz_mom_angle) {
+          xz_mom_angle=abs(atan((*xyz_mom)[lar_pos][vtx_pos][1]/(*xyz_mom)[lar_pos][vtx_pos][2]));
+        }
+        if (abs(atan((*xyz_mom)[lar_pos][vtx_pos][1]/(*xyz_mom)[lar_pos][vtx_pos][2]))>yz_mom_angle) {
+          yz_mom_angle=abs(atan((*xyz_mom)[lar_pos][vtx_pos][1]/(*xyz_mom)[lar_pos][vtx_pos][2]));
+        }
 	      int n=0;
         for (auto& sel:br) {
           TH1D* hist1=hists1[n][k];
@@ -131,11 +146,13 @@ void populate_histograms(char* eff,char* caf,vector<vector<TH1D*>>& hists1,vecto
           hist2->Fill(var_type, geo_eff);
         }
       }
+      if (abs(xz_mom_angle)<0.3&&abs(yz_mom_angle)<0.3) {cout<<var_type<<"; ";}
       k++;
     }
   }
   eff_file.Close();
   caf_file.Close();
+  cout<<endl;
 }
 
 void FD_selection_cuts()
@@ -165,7 +182,8 @@ void FD_selection_cuts()
   {
     memset(eff, 0, 99); // clear array each time
     memset(caf, 0, 99);
-    sprintf(eff, "/storage/shared/barwu/10thTry/FDEff/FDGeoEff_62877585_99%d_Eff.root", j);
+    //sprintf(eff, "/storage/shared/barwu/10thTry/FDEff/FDGeoEff_62877585_99%d_Eff.root", j);
+    sprintf(eff, "/storage/shared/barwu/10thTry/FDEff_backup/FDGeoEff_62877585_99%d_Eff.root", j);
     sprintf(caf, "/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_99%d.root", j);
     if(access(eff, 0)==0)
     {
@@ -226,8 +244,8 @@ void FD_selection_cuts()
     r->Update();
     i_select++;
   }
-  c->SaveAs("/home/barwu/repos/MuonEffNN/10thTry/FD_hists_all.png");
-  r->SaveAs("/home/barwu/repos/MuonEffNN/10thTry/FD_hists_ratios.png");
+  //c->SaveAs("/home/barwu/repos/MuonEffNN/10thTry/FD_high_energy_hists_all.png");
+  //r->SaveAs("/home/barwu/repos/MuonEffNN/10thTry/FD_high_energy_hists_ratios.png");
 
   TCanvas *cs[5];
   TCanvas *rs[5];
@@ -275,8 +293,8 @@ void FD_selection_cuts()
     }
     cs[i-1]->Update();
     rs[i-1]->Update();
-    cs[i-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/10thTry/FD_%s_hists.png", dt));
-    rs[i-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/10thTry/FD_%s_hists_ratios.png", dt));
+    //cs[i-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/10thTry/FD_%s_high_energy_hists.png", dt));
+    //rs[i-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/10thTry/FD_%s_high_energy_hists_ratios.png", dt));
     i++;
   }
 }

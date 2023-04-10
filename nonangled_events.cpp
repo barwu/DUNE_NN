@@ -67,6 +67,7 @@ vector<sel_type> br=
 */
 void populate_histograms(char* eff,char* caf,vector<TH1D*>& hists1,vector<TH1D*>& hists2,int j)
 {
+  cout<<caf<<endl;
   TFile eff_file(eff);
   TFile caf_file(caf);
   TTree *event_data=(TTree*)eff_file.Get("event_data");
@@ -91,8 +92,8 @@ void populate_histograms(char* eff,char* caf,vector<TH1D*>& hists1,vector<TH1D*>
       TH1D* hist2=hists2[k];
       for (unsigned long vtx_pos=11;vtx_pos>9;vtx_pos--) {
       double cross_sectional_angle=atan((*xyz_mom)[lar_pos][vtx_pos][1]/(*xyz_mom)[lar_pos][vtx_pos][2]);
-      if (abs(cross_sectional_angle)>0.2) {continue;}
-      cout<<cross_sectional_angle<<endl;
+      if (abs(cross_sectional_angle)>0.3) {continue;}
+      cout<<"event #"<<i<<", "<<cross_sectional_angle<<endl;
       if (k==0) {
       variable_type=(*xyz_mom)[lar_pos][vtx_pos][2];
       } else if (k==1) {
@@ -116,6 +117,7 @@ void populate_histograms(char* eff,char* caf,vector<TH1D*>& hists1,vector<TH1D*>
       k++;
     }
   }
+  cout<<endl;
   eff_file.Close();
   caf_file.Close();
 }

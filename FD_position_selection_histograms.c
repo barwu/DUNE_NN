@@ -166,7 +166,8 @@ void FD_position_selection_histograms()
   {
     memset(eff, 0, 99); // clear array each time
     memset(caf, 0, 99);
-    sprintf(eff, "/storage/shared/barwu/10thTry/FDEff/FDGeoEff_62877585_99%d_Eff.root", j);
+    //sprintf(eff, "/storage/shared/barwu/10thTry/FDEff/FDGeoEff_62877585_99%d_Eff.root", j);
+    sprintf(eff, "/storage/shared/barwu/10thTry/FDEff_backup/FDGeoEff_62877585_99%d_Eff.root", j);
     sprintf(caf, "/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_99%d.root", j);
     if(access(eff, 0)==0)
     {
@@ -233,7 +234,7 @@ void FD_position_selection_histograms()
     }
     cs[vtx_pos]->Update();
     rs[vtx_pos]->Update();
-    cs[vtx_pos]->SaveAs(Form("/home/barwu/repos/MuonEffNN/10thTry/FD_hists_vtx=%f_cm.png", vertex_position[vtx_pos]));
-    rs[vtx_pos]->SaveAs(Form("/home/barwu/repos/MuonEffNN/10thTry/FD_hists_ratios_vtx=%f_cm.png", vertex_position[vtx_pos]));
+    //cs[vtx_pos]->SaveAs(Form("/home/barwu/repos/MuonEffNN/10thTry/FD_hists_vtx=%f_cm.png", vertex_position[vtx_pos]));
+    //rs[vtx_pos]->SaveAs(Form("/home/barwu/repos/MuonEffNN/10thTry/FD_hists_ratios_vtx=%f_cm.png", vertex_position[vtx_pos]));
   }
 }
