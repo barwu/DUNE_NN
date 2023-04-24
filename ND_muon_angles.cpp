@@ -112,5 +112,5 @@ void ND_muon_angles()
     hist->GetYaxis()->SetTitle("# of events");
   }
   c->Update();
-  c->SaveAs("/home/barwu/repos/MuonEffNN/10thTry/ND_on-axis_muon_angle_hists_radians.png")
+  c->SaveAs("/home/barwu/repos/MuonEffNN/10thTry/ND_on-axis_muon_angle_hists_radians.png");
 }
