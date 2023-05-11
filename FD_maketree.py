@@ -258,7 +258,8 @@ def processFiles(f):
                         thisEff_contained+=np.sum(nnContained)
                         thisEff_combined+=np.sum(combinedEfficiency)
                         
-                    # for i in range(64): if (det_pos==14):
+                    # for i in range(64):
+                    #   if (det_pos==14):
                 #         print(throw_number, end="; ")
                 #         print(throw_y[i], end="; ")
                 #         print(throw_z[i], end="; ")
@@ -316,9 +317,7 @@ if __name__=="__main__":
     #filesPerProc=int(np.ceil(float(len(allFiles))/NUM_PROCS))
     #print(filesPerProc, NUM_PROCS)
 
-    pool=Pool(NUM_PROCS)
+    pool=Pool(NUM_PROCS) #don't use multiprocessing for debugging
     pool.map(processFiles, allFiles)
-        #don't use multiprocessing for debugging
-    #for file in allFiles:
-        #processFiles(file)
+    #for file in allFiles: processFiles(file)
     #processFiles("/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_990.root")
