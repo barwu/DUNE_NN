@@ -13,6 +13,8 @@
         "new": "cpp",
         "energy_compare.C": "cpp",
         "cmath": "cpp",
-        "complex": "cpp"
+        "complex": "cpp",
+        "iostream": "cpp",
+        "algorithm": "cpp"
     }
 }

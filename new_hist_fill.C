@@ -48,8 +48,8 @@ const char* list_of_directories[40]={"0mgsimple","0m","1.75m","2m","4m","5.75m",
 "2mRHC","4mRHC","5.75mRHC","8mRHC","9.75mRHC","12mRHC","13.75mRHC","16mRHC","17.75mRHC","20mRHC",
 "21.75mRHC","24mRHC","25.75mRHC","26.75mRHC","28mRHC","28.25mRHC","28.5mRHC"};
 
-Para pr[]=
-{
+Para pr[]= //position is in units of cm, momentum is in units of GeV/c, angle is in units of rad,
+{ // and energy is in  units of GeV
   {"vtx_x", true, -300., 300. , &x_pos},
   {"vtx_y", true, -100., 100., &y_pos},
   {"vtx_z", true, 50., 350., &z_pos},
@@ -125,7 +125,7 @@ void populate_histograms(char* eff,char* CAF,vector<TH1D*>hists1,vector<TH1D*>hi
         n++;
 	      hist1->Fill(*item.field_value);
         hist2->Fill(*item.field_value,*sel.sel_value);
-	      double geo_eff = *sel.eff_value;
+	      double geo_eff=*sel.eff_value;
         if (geo_eff<=0.0001) {
 	        continue;
 	      } else {
@@ -158,14 +158,18 @@ void new_hist_fill()
     }
   }
 
-  int directory_number=4;
-  cout<<directory_number<<endl;
-  for (int j=3777; j<3778; j++)
+  const float directory_number=0; // Sometimes the directory # is an integer, sometimes its a fraction
+  cout<<directory_number<<endl; //remember to change the wildcard and variable type accordingly
+  for (int j=0; j<30000; j++)
   {
     memset(eff, 0, 99); // clear array each time
-    memset(caf, 0, 99);
-    sprintf(eff,"/storage/shared/barwu/10thTry/combined1/%dm/FHC.%d0%05d.CAF_Eff.root",directory_number,directory_number+1,j);
-    sprintf(caf,"/storage/shared/barwu/10thTry/NDCAF/%dm/%02d/FHC.%d0%05d.CAF.root",directory_number,j/1000,directory_number+1,j);
+    memset(caf, 0, 99); 
+    // sprintf(eff,"/storage/shared/barwu/10thTry/combined1/%02dm/%02d/FHC.%03d%04d.CAF_Eff.root",directory_number,j/1000,
+    // int((directory_number+1)*100+j/10000),j%10000);
+    // sprintf(caf,"/storage/shared/barwu/10thTry/NDCAF/%02dm/%02d/FHC.%03d%04d.CAF.root",directory_number,j/1000,
+    // int((directory_number+1)*100+j/10000),j%10000);
+    sprintf(eff,"/storage/shared/barwu/10thTry/combined1/0m/%02d/FHC.10%05d.CAF_Eff.root",j/1000,j);
+    sprintf(caf,"/storage/shared/wshi/CAFs/NDFHC_PRISM/%02d/FHC.10%05d.CAF.root",j/1000,j);
     //sprintf(eff,"/storage/shared/barwu/9thTry/eff_trees/FHC.100%04d.CAF_MuonEff.root",j);
     //sprintf(caf,"/storage/shared/cvilela/CAF/ND_v7/0%01d/FHC.100%04d.CAF.root",j/1000,j);
     if(access(eff, 0)==0)
@@ -225,7 +229,7 @@ void new_hist_fill()
       n++;
     }
   }
-  //c->SaveAs("/home/barwu/repos/MuonEffNN/images/2m_PRISM_hists_all.png");
+  //c->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/%02dm_PRISM_hists_all.png",directory_number));
 
   TCanvas *cs[5];
   n=0;
@@ -274,7 +278,7 @@ void new_hist_fill()
       n++;
     }
     cs[i]->Update();
-    //cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/2m_PRISM_hists_%s.png",dt));
+    //cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/%02dm_PRISM_hists_%s_6000.png",directory_number,dt));
     i++;
   }
 }

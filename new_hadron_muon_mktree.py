@@ -40,35 +40,26 @@ detRefBeamCoord = [0, 0, 562.1179] #xyz coords of reference detector position
 beamLineRotation = -0.101
 
 # Fiducial volume definition
-def isFV(x, y, z) :
-    inDeadRegion = False
-
+def isFV(x, y, z):
+    inDeadRegion=False
     for i in [-3, -2, -1, 0, 1, 2, 3] :
-        cathode_center = i*102.1
-        if (x > cathode_center - 0.75) and (x < cathode_center + 0.75) :
-            inDeadRegion = True
-        module_boundary = i*102.1+51.05
-        if (i <= 2) and (x > module_boundary - 1.3) and (x < module_boundary + 1.3) :
-            inDeadRegion = True
-
-    for i in [1, 2, 3, 4] :
-        module_boundary = i*101.8 - 0.6
-        if (z > module_boundary - 1.7) and (z < module_boundary + 1.7) :
-            inDeadRegion = True
-
-    return (abs(x) < 300) and (abs(y) < 100) and (z > 50) and (z < 350) and (not inDeadRegion)
+        cathode_center=i*102.1
+        if (x>cathode_center-0.75) and (x<cathode_center+0.75):inDeadRegion=True 
+        module_boundary=i*102.1+51.05
+        if (i<=2) and (x>module_boundary-1.3) and (x<module_boundary+1.3):inDeadRegion=True
+    for i in [1, 2, 3, 4]:
+        module_boundary=i*101.8-0.6
+        if (z>module_boundary-1.7) and (z<module_boundary+1.7):inDeadRegion=True
+    return (abs(x)<300) and (abs(y)<100) and (z>50) and (z<350) and (not inDeadRegion)
 
 # Vectorize fiducial volume function
 isFV_vec = np.vectorize(isFV)
 
 # Simple muon containment cut
 def isContained(x, y, z) :
-    if abs(x) > 350 :
-        return False
-    if abs(y) > 150 :
-        return False
-    if z < 0 or z > 500 :
-        return False
+    if abs(x)>350:return False
+    if abs(y)>150:return False
+    if z<0 or z>500:return False
     return True
 
 treeVarsToRead=['isCC',
@@ -101,12 +92,13 @@ list_of_directories=["0mgsimple","0m","1.75m","2m","4m","5.75m","8m","9.75m","12
 #CAF_RHC_fName="/storage/shared/cvilela/CAF/ND_v7/0"+argv[1]+"/RHC.100"+argv[1]+argv[2]+"*.CAF.root"
 #allFiles=glob(CAF_FHC_fName)
 #allFiles+=glob(CAF_RHC_fName)
-#prism_CAF_files="/storage/shared/wshi/CAFs/NDFHC_PRISM/"+argv[1]+argv[2]+"/FHC.10"+argv[1]+argv[2]+"*.CAF.root"
-#prism_CAF_files="/storage/shared/wshi/CAFs/NDFHC_PRISM/2[0,1,2]/FHC.102[0,1,2]*.CAF.root"
-#prism_CAF_files="/storage/shared/wshi/CAFs/NDFHC_PRISM/29/FHC.1029585.CAF.root"
+#CAF_files="/storage/shared/wshi/CAFs/NDFHC_PRISM/"+argv[1]+argv[2]+"/FHC.10"+argv[1]+argv[2]+"*.CAF.root"
+#CAF_files="/storage/shared/wshi/CAFs/NDFHC_PRISM/2[0,1,2]/FHC.102[0,1,2]*.CAF.root"
+#CAF_files="/storage/shared/wshi/CAFs/NDFHC_PRISM/29/FHC.1029585.CAF.root"
 #prism_CAF_files="/storage/shared/wshi/CAFs/NDCAF/2m/FHC.1018172.CAF.root"
-prism_CAF_files="/storage/shared/barwu/10thTry/NDCAF/"+argv[1]+"/*.CAF.root"
-allFiles=glob(prism_CAF_files) #file #s range from 0-29
+CAF_files="/storage/shared/barwu/10thTry/NDCAF/"+argv[1]+"/*.CAF.root"
+#CAF_files="/storage/shared/barwu/FDdevectorized/FDGeoEff_62877585_99?.root" #FD
+allFiles=glob(CAF_files) #file #s range from 0-29
 #cpu processing is set up later in the script
 
 """
@@ -124,8 +116,8 @@ file_list.close()
 N_EVENTS_PER_THROW = 100
 
 # Just for plotting
-efficiencyProjections = [ ["Ev", 40, 0, 8],
-                          ["LepE", 40, 0, 8],
+efficiencyProjections = [ #["Ev", 40, 0, 8],
+                          #["LepE", 40, 0, 8],
                           ["vtx_x", 80, -400, 400],
                           ["vtx_y", 60, -150, 150],
                           ["vtx_z", 80, 0, 400] ,
@@ -138,8 +130,8 @@ def processFiles(f):
     # Analyse one file at a time, otherwise memory explodes!
     #f is only 1 file, each file get assigned to a different cpu
     #for f in f_list :
-        #output="/home/barwu/repos/MuonEffNN/9thTry/test/"+splitext(basename(f))[0]+"_MuonEff.root" #need to come up with a new place to put the TTrees
-        output="/storage/shared/barwu/10thTry/combined1/"+argv[1]+splitext(basename(f))[0]+"_Eff.root"
+        output="/storage/shared/barwu/10thTry/combined1/"+argv[1]+"/"+splitext(basename(f))[0]+"_Eff.root"
+        #output="/home/barwu/repos/MuonEffNN/10thtry/placeholder/"+splitext(basename(f))[0]+"_MuonEff.root" #FD
         if exists(output)==True:
             #print("testing")
             return None
@@ -148,6 +140,7 @@ def processFiles(f):
         try:
             # Get caf TTree
             CAF = concatenate("{0}:caf".format(f), treeVarsToRead, library = "np")
+            #CAF = concatenate("{0}:FDCAF".format(f), "hadron_throw_result", library = "np") #FD
             #CAF=uproot4.open(f)['caf']
             #fUprootIn = uproot.open(f)
             #CAF = fUprootIn['caf']
@@ -155,25 +148,28 @@ def processFiles(f):
             print("Couldn't find CAF TTree in file {0}. Skipping.".format(f))
             return None
             #continue
-        print(f)
 
         # Figure out what events pass the fiducial volume cut
-        if APPLY_FV_CUT :
-            CAF["inFV"] = isFV_vec(CAF["vtx_x"], CAF["vtx_y"], CAF["vtx_z"])
-        else :
-            CAF["inFV"] = [True]*len(CAF["vtx_x"])
+        if APPLY_FV_CUT: CAF["inFV"] = isFV_vec(CAF["vtx_x"], CAF["vtx_y"], CAF["vtx_z"])
+        else: CAF["inFV"] = [True]*len(CAF["vtx_x"])
 
         # Get tree with x, y and phi of geometric efficiency throws.
         geoThrows = concatenate("{0}:geoEffThrows".format(f), ['geoEffThrowsY', 'geoEffThrowsZ', 'geoEffThrowsPhi'], library = "np")
+        #geoThrows = concatenate("{0}:ThrowsFD".format(f), ['throwVtxY', 'throwVtxZ', 'throwRot'], library = "np") #FD
 
         # Arrays to store the efficiencies
         effs = np.array([0.]*len(CAF['geoEffThrowResults']), dtype = np.float16)
         effs_tracker = np.array([0.]*len(CAF['geoEffThrowResults']), dtype = np.float16)
         effs_contained = np.array([0.]*len(CAF['geoEffThrowResults']), dtype = np.float16)
         effs_combined = np.array([0.]*len(CAF['geoEffThrowResults']), dtype = np.float16)
+        # effs = np.array([0.]*len(CAF['hadron_throw_result']), dtype = np.float16) #FD
+        # effs_tracker = np.array([0.]*len(CAF['hadron_throw_result']), dtype = np.float16)
+        # effs_contained = np.array([0.]*len(CAF['hadron_throw_result']), dtype = np.float16)
+        # effs_combined = np.array([0.]*len(CAF['hadron_throw_result']), dtype = np.float16)
 
         # Event loop
         for i_event in range(len(CAF['geoEffThrowResults'])):
+        # for i_event in range(len(CAF['hadron_throw_result'])):
         #     if i_event==10: break #use when debugging
         # for i_event in [2991]:
             #print(i_event)
@@ -192,6 +188,9 @@ def processFiles(f):
             throws_FV = isFV_vec([CAF["vtx_x"][i_event]]*len(geoThrows["geoEffThrowsY"][int(i_event/N_EVENTS_PER_THROW)]),
                                  geoThrows["geoEffThrowsY"][int(i_event/N_EVENTS_PER_THROW)]-offset[1],
                                  geoThrows["geoEffThrowsZ"][int(i_event/N_EVENTS_PER_THROW)]-offset[2])
+            # throws_FV = isFV_vec([CAF["vtx_x"][i_event]]*len(geoThrows["ThrowVtxY"][int(i_event/N_EVENTS_PER_THROW)]), #FD
+            #                      geoThrows["ThrowVtxY"][int(i_event/N_EVENTS_PER_THROW)]-offset[1],
+            #                      geoThrows["ThrowVtxZ"][int(i_event/N_EVENTS_PER_THROW)]-offset[2])
 
             NthrowsInFV = sum(throws_FV) # Count how many throws were in the FV. Will be useful later.
             if NthrowsInFV==0 and APPLY_FV_CUT:
@@ -203,31 +202,32 @@ def processFiles(f):
 
             # Loop through the hadronic geometric efficiency throw results. Each bitfield corresponds to 64 throws. There are 64*78 = 4992 throws in total
             for i_bitfield, bitfield in enumerate(CAF['geoEffThrowResults'][i_event][0][1]) :
+            #for i_bitfield, bitfield in enumerate(CAF['hadron_throw_result'][i_event]) :
                 # Convert 64 bit integer into "bit" array
                 bitfield = np.array([bitfield], dtype = np.uint64)
                 bitfield = np.unpackbits(np.array(bitfield, dtype='>i8').view(np.uint8)) #unpackbits converts a 256-basevalue nto an array of binary integers
                 bitfieldTemp = np.copy(bitfield)
                 # Annoyingly, the array is backwards. Invert array order...
-                for j_bitfield in range(len(bitfield)) :
-                    bitfield[-(1+j_bitfield)] = bitfieldTemp[j_bitfield]
-
+                for j_bitfield in range(len(bitfield)):bitfield[-(1+j_bitfield)]=bitfieldTemp[j_bitfield]
                 # Calculate hadron efficiency. Sum the number of throws where the hadronic system was contained (bit in bitfield is 1) and the throw was in the fiducial volume.
-                if APPLY_FV_CUT :
-                    thisEff += np.sum(np.logical_and(bitfield, throws_FV[i_bitfield*64:(i_bitfield+1)*64]))
-                else :
-                    thisEff += np.sum(bitfield)
+                if APPLY_FV_CUT:thisEff+=np.sum(np.logical_and(bitfield, throws_FV[i_bitfield*64:(i_bitfield+1)*64]))
+                else:thisEff+=np.sum(bitfield)
 
                 # Get variables needed to evaluate muon neural network for each throw.
                 # Get new XYZ from throws
                 # x is not randomized. This is a convoluted way of repeating vtx_x the correct number of times
                 throw_x = [CAF["vtx_x"][i_event]]*len(geoThrows["geoEffThrowsY"][int(i_event/N_EVENTS_PER_THROW)][i_bitfield*64:(i_bitfield+1)*64])
+                #throw_x = [CAF["vtx_x"][i_event]]*len(geoThrows["geoEffThrowsY"][int(i_event/N_EVENTS_PER_THROW)][i_bitfield*64:(i_bitfield+1)*64]) #FD
                 # Get y for each random throw.
                 throw_y = geoThrows["geoEffThrowsY"][int(i_event/N_EVENTS_PER_THROW)][i_bitfield*64:(i_bitfield+1)*64]-offset[1]
+                #throw_y = geoThrows["throwVtxY"][int(i_event/N_EVENTS_PER_THROW)][i_bitfield*64:(i_bitfield+1)*64]-offset[1] #FD
                 # Get z for each random throw
                 throw_z = geoThrows["geoEffThrowsZ"][int(i_event/N_EVENTS_PER_THROW)][i_bitfield*64:(i_bitfield+1)*64]-offset[2]
+                #throw_z = geoThrows["throwVtxZ"][int(i_event/N_EVENTS_PER_THROW)][i_bitfield*64:(i_bitfield+1)*64]-offset[2] #FD
                 # Get rotation matrices from throws
                 # Get phi for each random throw
                 throw_phi = geoThrows["geoEffThrowsPhi"][int(i_event/N_EVENTS_PER_THROW)][i_bitfield*64:(i_bitfield+1)*64]
+                #throw_phi = geoThrows["throwRot"][int(i_event/N_EVENTS_PER_THROW)][i_bitfield*64:(i_bitfield+1)*64] #FD
                 #where is the randomization? these throw_... parameters should be a randomized set of digits.
 
                 # Use vertex to determine mean decay point
@@ -235,15 +235,14 @@ def processFiles(f):
                 #decayZbeamCoord = gDecayZ.Eval(CAF["vtx_x"][i_event] / 100 - detRefBeamCoord[0])*100 # in cm
                 decayZbeamCoord = gDecayZ((CAF["vtx_x"][i_event] / 100 - detRefBeamCoord[0])*100) # in cm
                 # Convert neutrino production point to *near detector coordinates*
-                decayZdetCoord = (-1*detRefBeamCoord[2]*100+decayZbeamCoord)*np.cos(beamLineRotation) - (-1*detRefBeamCoord[1]*100*np.sin(beamLineRotation)) + beamRefDetCoord[2]*100
-                decayYdetCoord = (-1*detRefBeamCoord[1]*100*np.cos(beamLineRotation)) + (-1*detRefBeamCoord[2]*100+decayZbeamCoord)*np.sin(beamLineRotation) + beamRefDetCoord[1]*100
+                decayZdetCoord = (-1*detRefBeamCoord[2]*100+decayZbeamCoord)*np.cos(beamLineRotation) - (-1*detRefBeamCoord[1]*100*np.sin(beamLineRotation)) + \
+                    beamRefDetCoord[2]*100
+                decayYdetCoord = (-1*detRefBeamCoord[1]*100*np.cos(beamLineRotation)) + (-1*detRefBeamCoord[2]*100+decayZbeamCoord)*np.sin(beamLineRotation) + \
+                    beamRefDetCoord[1]*100
                 decayXdetCoord = -1*detRefBeamCoord[0]*100 + beamRefDetCoord[0]*100
 
                 # Vector from neutrino production point to original event vertex
-                decayToVertex = [CAF["vtx_x"][i_event] - decayXdetCoord,
-                                 CAF["vtx_y"][i_event] - decayYdetCoord,
-                                 CAF["vtx_z"][i_event] - decayZdetCoord]
-
+                decayToVertex = [CAF["vtx_x"][i_event]-decayXdetCoord,CAF["vtx_y"][i_event]-decayYdetCoord,CAF["vtx_z"][i_event]-decayZdetCoord]
                 # Vector from neutrino production point to randomly thrown vertex.
                 decayToTranslated = [ [throw_x[i] - decayXdetCoord, throw_y[i] - decayYdetCoord, throw_z[i] - decayZdetCoord] for i in range(len(throw_x)) ]
 
@@ -252,8 +251,7 @@ def processFiles(f):
 
                 translationAngle = np.dot(decayToTranslated, decayToVertex)
                 translationAngle = np.divide(translationAngle, np.multiply(magDecayToVertex,magDecayToTranslated));
-                #for angleval in translationAngle:
-                    #if angleval<=-1 or angleval>=1: print(i_event, angleval)
+                #for angleval in translationAngle:if angleval<=-1 or angleval>=1: print(i_event, angleval)
                 translationAngle = np.arccos(translationAngle);
                 translationAxis = np.cross(decayToTranslated, decayToVertex)
                 translationAxis = [ thisV/np.linalg.norm(thisV) for thisV in translationAxis ]
@@ -321,7 +319,10 @@ def processFiles(f):
                 effs_tracker[i_event] = float(thisEff_tracker)/(78.*64)
                 effs_contained[i_event] = float(thisEff_contained)/(78.*64)
                 effs_combined[i_event] = float(thisEff_combined)/(78.*64)
-            #print("still running")
+                # effs[i_event] = thisEff/(78.*64) #FD
+                # effs_tracker[i_event] = float(thisEff_tracker)/(78.*64)
+                # effs_contained[i_event] = float(thisEff_contained)/(78.*64)
+                # effs_combined[i_event] = float(thisEff_combined)/(78.*64)
 
         # This used to be used for matplotlib, but I don't use that for histogram-making.
         fv = np.logical_and(CAF["inFV"], CAF["isCC"])
@@ -434,10 +435,9 @@ if __name__ == "__main__" :
     #filesPerProc = int(np.ceil(float(len(allFiles))/NUM_PROCS))
     #print(filesPerProc, NUM_PROCS)
 
-    pool=Pool(NUM_PROCS)
+    print("looking at subdirectory ",end=argv[1])
+    pool=Pool(NUM_PROCS) #don't use multiprocessing for debugging
     pool.map(processFiles, allFiles)
-        #don't use multiprocessing for debugging
-    #for file in allFiles:
-    #  processFiles(file)
+    #for file in allFiles: processFiles(file)
     #processFiles("/storage/shared/cvilela/CAF/ND_v7/00/FHC.1000999.CAF.root")
     #processFiles("/storage/shared/wshi/CAFs/NDFHC_PRISM/03/FHC.1003999.CAF.root")

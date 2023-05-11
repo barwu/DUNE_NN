@@ -1,4 +1,8 @@
 #include "algorithm"
+#include "TFile.h"
+#include "TTree.h"
+#include "TChain.h"
+#include "TBranch.h"
 using namespace std;
 void upd(const char* new_file,const char* backup_file)
 {
@@ -34,7 +38,7 @@ void upd(const char* new_file,const char* backup_file)
   delete write_file;
 }
 
-void add_branches()
+int main()
 {
    char buff[99];
    char backup[99];
