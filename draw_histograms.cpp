@@ -75,7 +75,6 @@ void draw_histograms()
   TFile *raw_files[9];
   TFile *sel_files[45];
   TFile *geo_files[45];
-
   TH1D* raw_histograms[9];
   TH1D* sel_histograms[45];
   TH1D* geo_histograms[45];
@@ -83,14 +82,21 @@ void draw_histograms()
   int i_pr=0;
   for(Para item:pr)
   {
-    TTree *sel_hists=(TTree*)raw_histograms.Get("sel_hist_sel");
+
+    memset(raw_path, 0, 99); //clear array each time
+    memset(sel_path, 0, 99); 
+    memset(geo_path, 0, 99);
+    sprintf(raw_path,"/storage/shared/barwu/10thTry/0m_histograms/%s/FHC.10%05d.CAF_Eff.root",j/1000,j);
+    sprintf(sel_path,"/storage/shared/barwu/10thTry/0m_histograms/%s/FHC.10%05d.CAF_Eff.root",j/1000,j);
+sprintf(geo_path,"/storage/shared/barwu/10thTry/0m_histograms/%s/FHC.10%05d.CAF_Eff.root",j/1000,j);
+    *raw_files[0]=;
+    TTree *sel_hists=(TTree*)raw_files[index].Get("sel_hist_sel");
     for (auto sel:br)
     {
-
-      TTree *raw_hists=(TTree*)hist_file.Get("raw_hist_raw");
-      TTree *geo_hists=(TTree*)hist_file.Get("hist_geo");
+      TTree *raw_hists=(TTree*)sel_files[index].Get("raw_hist_raw");
+      TTree *geo_hists=(TTree*)geo_files[index].Get("hist_geo");
       raw_hists->SetBranchAddress(Form("raw_%s", item.field), raw_data[i_pr]);
-                i_pr++;
+      i_pr++;
       if(sel.calced) continue;
       for (Para item:pr)
       {
