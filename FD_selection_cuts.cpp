@@ -43,8 +43,8 @@ struct Para
 Para pr[]=
 {
   {"vtx_x", -300., 300.},
-  //{"vtx_y", 5.385, 5.39},
-  //{"vtx_z",  659.995, 660.005},
+  {"vtx_y", 5.385, 5.39},
+  {"vtx_z",  659.995, 660.005},
   {"LepMomX", -2.1, 3.},
   {"LepMomY", -8., 2.},
   {"LepMomZ", -1., 14.},
@@ -79,9 +79,7 @@ void populate_histograms(char* eff,char* caf,vector<vector<TH1D*>>& hists1,vecto
   TFile eff_file(eff);
   TFile caf_file(caf);
   TTree *event_data=(TTree*)eff_file.Get("event_data");
-  TTree *thing=(TTree*)caf_file.Get("throwResults");
-  TTree *cafTree=(TTree*)caf_file.Get("cafTree");
-  //TTree *thing=(TTree*)caf_file.Get("effTreeND");
+  TTree *thing=(TTree*)caf_file.Get("effTreeND");
   //gSystem->Exec("rm -f AutoDict*vector*vector*vector*double*");
   gInterpreter->GenerateDictionary("vector<vector<vector<double>>>", "vector");
   for(auto& sel:br) //efficiencies are in 3d array, but energy is in 1d array

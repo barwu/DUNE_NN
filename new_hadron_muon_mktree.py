@@ -96,7 +96,7 @@ list_of_directories=["0mgsimple","0m","1.75m","2m","4m","5.75m","8m","9.75m","12
 #CAF_files="/storage/shared/wshi/CAFs/NDFHC_PRISM/2[0,1,2]/FHC.102[0,1,2]*.CAF.root"
 #CAF_files="/storage/shared/wshi/CAFs/NDFHC_PRISM/29/FHC.1029585.CAF.root"
 #prism_CAF_files="/storage/shared/wshi/CAFs/NDCAF/2m/FHC.1018172.CAF.root"
-CAF_files="/storage/shared/barwu/10thTry/NDCAF/"+argv[1]+"/*.CAF.root"
+CAF_files="/storage/shared/barwu/10thTry/NDCAF/"+argv[1]+"/*/*.CAF.root"
 #CAF_files="/storage/shared/barwu/FDdevectorized/FDGeoEff_62877585_99?.root" #FD
 allFiles=glob(CAF_files) #file #s range from 0-29
 #cpu processing is set up later in the script

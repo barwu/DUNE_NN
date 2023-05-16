@@ -77,15 +77,15 @@ void populate_histograms(char* eff,char* CAF,vector<TH1D*>hists1,vector<TH1D*>hi
   TTree *event_data=(TTree*)eff_file.Get("event_data");
   TTree *caf=(TTree*)caf_file.Get("caf");
   int isCC=0, inFV=0;
-  for(auto item:br) 
+  for(auto sel:br) 
   {
-    if(item.calced) continue;
-    event_data->SetBranchAddress(item.sel_name, item.sel_value);
-    event_data->SetBranchAddress(item.eff_name, item.eff_value);
+    if(sel.calced) continue;
+    event_data->SetBranchAddress(sel.sel_name, sel.sel_value);
+    event_data->SetBranchAddress(sel.eff_name, sel.eff_value);
   }
   caf->SetBranchAddress("isCC",&isCC);
   event_data->SetBranchAddress("inFV",&inFV);   
-  for (auto item:pr) 
+  for (auto item:pr)
   {
     TTree *tree=item.iscaf?caf:event_data;
     tree->SetBranchAddress(item.field, item.field_value);
@@ -109,9 +109,7 @@ void populate_histograms(char* eff,char* CAF,vector<TH1D*>hists1,vector<TH1D*>hi
     muon_sel=muon_cont+muon_tra;
     muon_sel_eff=muon_cont_eff+muon_tra_eff;
     if (muon_sel!=0&&muon_sel!=1) {
-      cout<<"bad val for muon-selected check! "<<muon_sel<<endl;
-      cout<<"Event #"<<i<<" in file "<<eff<<endl;
-      cout<<"contained-"<<muon_cont<<", tracker-matched-"<<muon_tra<<endl;
+      cout<<"bad val for muon-selected check! "<<muon_sel<<endl<<"Event #"<<i<<" in file "<<eff<<endl<<"contained-"<<muon_cont<<", tracker-matched-"<<muon_tra<<endl;
       continue;
     }
 
@@ -158,11 +156,11 @@ void new_hist_fill()
     }
   }
 
-  const float directory_number=0; // Sometimes the directory # is an integer, sometimes its a fraction
-  cout<<directory_number<<endl; //remember to change the wildcard and variable type accordingly
+  const float directory_number=0; // Sometimes the directory # is an integer, sometimes its a fraction. Remember to change the wildcard and variable type accordingly.
+  cout<<directory_number<<endl;
   for (int j=0; j<30000; j++)
   {
-    memset(eff, 0, 99); // clear array each time
+    memset(eff, 0, 99); //clear array each time
     memset(caf, 0, 99); 
     // sprintf(eff,"/storage/shared/barwu/10thTry/combined1/%02dm/%02d/FHC.%03d%04d.CAF_Eff.root",directory_number,j/1000,
     // int((directory_number+1)*100+j/10000),j%10000);
