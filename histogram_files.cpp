@@ -43,9 +43,6 @@ double TotalMom, cos_angle, LongitudinalMom;
 const char* list_of_directories[40]={"0mgsimple","0m","1.75m","2m","4m","5.75m","8m","9.75m","12m","13.75m","16m","17.75m","20m","21.75m","24m","25.75m","26.75m","28m",
 "28.25m","28.5m","0mgsimpleRHC","0mRHC","1.75mRHC","2mRHC","4mRHC","5.75mRHC","8mRHC","9.75mRHC","12mRHC","13.75mRHC","16mRHC","17.75mRHC","20mRHC","21.75mRHC","24mRHC",
 "25.75mRHC","26.75mRHC","28mRHC","28.25mRHC","28.5mRHC"};
-const int NUM_VTX=22, NUM_LAR_DTR=15;
-double LAr_position[NUM_LAR_DTR]={-2800.,-2575.,-2400.,-2175.,-2000.,-1775.,-1600.,-1375.,-1200.,-975.,-800.,-575.,-400.,-175.,0.};
-double vertex_position[NUM_VTX]={-299.,-292.,-285.,-278.,-271.,-264.,-216.,-168.,-120.,-72.,-24.,24.,72.,120.,168.,216.,264.,271.,278.,285.,292.,299.};
 
 Para pr[]= //position is in units of cm, momentum is in units of GeV/c, angle is in units of rad, and energy is in  units of GeV
 {
@@ -69,7 +66,7 @@ vector<Sel_type> br=
   Sel_type("combined", "combined_eff", false, &comb, &comb_eff)
 };
 
-void ttree_histograms()
+void histogram_files()
 {
   gROOT->SetBatch(kTRUE);
   char eff[99];
@@ -91,10 +88,10 @@ void ttree_histograms()
 
   const float directory_number=0; // Sometimes the directory # is an integer, sometimes its a fraction. Remember to change the wildcard and variable type accordingly.
   cout<<directory_number<<endl;
-  for (int j=0; j<30; j++)
+  for (int j=0; j<30000; j++)
   {
     memset(eff, 0, 99); // clear array each time
-    memset(caf, 0, 99); 
+    memset(caf, 0, 99);
     // sprintf(eff,"/storage/shared/barwu/10thTry/combined1/%02dm/%02d/FHC.%03d%04d.CAF_Eff.root",directory_number,j/1000,int((directory_number+1)*100+j/10000),j%10000);
     // sprintf(caf,"/storage/shared/barwu/10thTry/NDCAF/%02dm/%02d/FHC.%03d%04d.CAF.root",directory_number,j/1000,int((directory_number+1)*100+j/10000),j%10000);
     sprintf(eff,"/storage/shared/barwu/10thTry/combined1/0m/%02d/FHC.10%05d.CAF_Eff.root",j/1000,j);
@@ -137,12 +134,10 @@ void ttree_histograms()
       muon_sel=muon_cont+muon_tra;
       muon_sel_eff=muon_cont_eff+muon_tra_eff;
       if (muon_sel!=0&&muon_sel!=1) {
-        cout<<"bad val for muon-selected check! "<<muon_sel<<endl;
-        cout<<"Event #"<<i<<" in file "<<eff<<endl;
-        cout<<"contained-"<<muon_cont<<", tracker-matched-"<<muon_tra<<endl;
+        cout<<"bad val for muon-selected check! "<<muon_sel<<endl<<"Event #"<<i<<" in file "<<eff<<endl<<"contained-"<<muon_cont<<", tracker-matched-"<<muon_tra<<endl;
         continue;
       }
-     
+
       int n=0;
       for (auto sel:br) {
         for (auto item:pr) {
@@ -166,32 +161,29 @@ void ttree_histograms()
     caf_file.Close();
   }
 
-  TFile *hist_file=new TFile("/storage/shared/barwu/10thTry/xxxx.root","recreate");
-  TTree *raw_hists=new TTree("raw data histograms","raw_hists");
-  TTree *sel_hists=new TTree("selection-cut histograms","sel_hists");
-  TTree *geo_hists=new TTree("geometrically-corrected histograms","geo_hists");
+  TFile *raw_files[9];
+  TFile *sel_files[45];
+  TFile *geo_files[45];
   int index=0;
-  for (Para item:pr)
-  {
-    const char *fd=item.field;
-    TH1D* hist1=histograms1.at(index);
-    TBranch *raw=raw_hists->Branch(Form("raw_%s",fd),"TH1D",&hist1);
-    index++;
-  }
-  index=0;
-  for (auto sel:br)
-  {
+  for (auto sel:br) {
     const char *dt=sel.sel_name;
-    for (Para item:pr)
-    {
+    for (Para item:pr) {
       const char *fd=item.field;
-      TH1D* hist2=histograms2.at(index);
-      TH1D* hist3=histograms3.at(index);
-      TBranch *selected=sel_hists->Branch(Form("selected_%s_%s",dt,fd),"TH1D",&hist2);
-      TBranch *geo_corrected=geo_hists->Branch(Form("geo-corrected_%s_%s",dt,fd),"TH1D",&hist3);
+      if (index<9) {
+        raw_files[index]=new TFile(Form("/storage/shared/barwu/10thTry/0m_histograms/%s/raw_%s.root",fd,fd),"recreate");
+        TH1D* raw_hist=histograms1.at(index);
+        raw_hist->Write();
+        raw_files[index]->Close();
+      }
+      sel_files[index]=new TFile(Form("/storage/shared/barwu/10thTry/0m_histograms/%s/selection-cut_%s_%s.root",fd,dt,fd),"recreate");
+      TH1D* sel_hist=histograms2.at(index);
+      sel_hist->Write();
+      sel_files[index]->Close();
+      geo_files[index]=new TFile(Form("/storage/shared/barwu/10thTry/0m_histograms/%s/geo-corrected_%s_%s.root",fd,dt,fd),"recreate");
+      TH1D* geo_hist=histograms2.at(index);
+      geo_hist->Write();
+      geo_files[index]->Close();
       index++;
     }
   }
-  hist_file->Write();
-  delete hist_file;
 }
