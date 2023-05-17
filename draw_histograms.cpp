@@ -20,7 +20,7 @@ struct Para
   //static constexpr const char *const S;
   //constexpr const *char , VTX_X="vtx_x", *VTX_Y="vtx_y", *VTX_Z="vtx_z";
   //const char *LMX="LepMomX", *LMY="LepMomY", *LMZ="LepMomZ";
-  char field[30];
+  const char* field;
   bool iscaf;
   double l;
   double h;
@@ -43,22 +43,21 @@ int muon_cont, muon_tra, muon_sel, hadr, comb;
 double muon_cont_eff, muon_tra_eff, muon_sel_eff, hadr_eff, comb_eff;
 double x_pos, y_pos, z_pos, XLepMom, YLepMom, ZLepMom;
 double TotalMom, cos_angle, LongitudinalMom;
-const char* list_of_directories[40]={"0mgsimple","0m","1.75m","2m","4m","5.75m","8m","9.75m","12m","13.75m","16m",
-"17.75m","20m","21.75m","24m","25.75m","26.75m","28m","28.25m","28.5m","0mgsimpleRHC","0mRHC","1.75mRHC",
-"2mRHC","4mRHC","5.75mRHC","8mRHC","9.75mRHC","12mRHC","13.75mRHC","16mRHC","17.75mRHC","20mRHC",
-"21.75mRHC","24mRHC","25.75mRHC","26.75mRHC","28mRHC","28.25mRHC","28.5mRHC"};
+const char* list_of_directories[40]={"0mgsimple","0m","1.75m","2m","4m","5.75m","8m","9.75m","12m","13.75m","16m","17.75m","20m","21.75m","24m","25.75m","26.75m","28m",
+"28.25m","28.5m","0mgsimpleRHC","0mRHC","1.75mRHC","2mRHC","4mRHC","5.75mRHC","8mRHC","9.75mRHC","12mRHC","13.75mRHC","16mRHC","17.75mRHC","20mRHC","21.75mRHC","24mRHC",
+"25.75mRHC","26.75mRHC","28mRHC","28.25mRHC","28.5mRHC"};
 
 Para pr[]= //position is in units of cm, momentum is in units of GeV/c, angle is in units of rad, and energy is in  units of GeV
 {
-  {"vtx_x", true, -300., 300. , &x_pos},
+  {"vtx_x", true, -300., 300., &x_pos},
   {"vtx_y", true, -100., 100., &y_pos},
   {"vtx_z", true, 50., 350., &z_pos},
   {"LepMomX", true, -2., 2., &XLepMom},
   {"LepMomY", true, -4., 2., &YLepMom},
   {"LepMomZ", true, -0.5, 4.5, &ZLepMom},
-  {"TotMom", false, 0., 5.,&TotalMom},
-  {"cos_LepNuAngle", false, 0., 1.,&cos_angle},
-  {"LongMom", false, -1., 5.,&LongitudinalMom}
+  {"TotMom", false, 0., 5., &TotalMom},
+  {"cos_LepNuAngle", false, 0., 1., &cos_angle},
+  {"LongMom", false, -1., 5., &LongitudinalMom}
 };
 
 vector<Sel_type> br=
@@ -72,38 +71,39 @@ vector<Sel_type> br=
 
 void draw_histograms()
 {
-  TFile *raw_files[9];
-  TFile *sel_files[45];
-  TFile *geo_files[45];
+  char raw_path[99];
+  char sel_path[99];
+  char geo_path[99];
+  memset(raw_path, 0, 99); //clear array each time
+  memset(sel_path, 0, 99); 
+  memset(geo_path, 0, 99);
+  TFile* raw_files[9];
+  TFile* sel_files[45];
+  TFile* geo_files[45];
   TH1D* raw_histograms[9];
   TH1D* sel_histograms[45];
   TH1D* geo_histograms[45];
   int index=0;
-  int i_pr=0;
-  for(Para item:pr)
+  for(auto sel:br)
   {
-
-    memset(raw_path, 0, 99); //clear array each time
-    memset(sel_path, 0, 99); 
-    memset(geo_path, 0, 99);
-    sprintf(raw_path,"/storage/shared/barwu/10thTry/0m_histograms/%s/FHC.10%05d.CAF_Eff.root",j/1000,j);
-    sprintf(sel_path,"/storage/shared/barwu/10thTry/0m_histograms/%s/FHC.10%05d.CAF_Eff.root",j/1000,j);
-sprintf(geo_path,"/storage/shared/barwu/10thTry/0m_histograms/%s/FHC.10%05d.CAF_Eff.root",j/1000,j);
-    *raw_files[0]=;
-    TTree *sel_hists=(TTree*)raw_files[index].Get("sel_hist_sel");
-    for (auto sel:br)
+    const char* dt=sel.sel_name;
+    for (Para item:pr)
     {
-      TTree *raw_hists=(TTree*)sel_files[index].Get("raw_hist_raw");
-      TTree *geo_hists=(TTree*)geo_files[index].Get("hist_geo");
-      raw_hists->SetBranchAddress(Form("raw_%s", item.field), raw_data[i_pr]);
-      i_pr++;
+      const char *fd=item.field;
       if(sel.calced) continue;
-      for (Para item:pr)
+      else if (index<9)
       {
-        sel_hists->SetBranchAddress(Form("selected_%s_%s", item.field,sel.sel_name), sel_data[index]);
-        geo_hists->SetBranchAddress(Form("geo-corrected_%s_%s", item.field,sel.sel_name), geo_data[index]);
-        index++;
+        sprintf(raw_path,"/storage/shared/barwu/10thTry/0m_histograms/%s/raw_%s.root",fd,fd);
+        raw_files[int(index)]=new TFile(raw_path, "read");
+        raw_histograms[int(index)]=(TH1D*)raw_files[int(index)]->Get(Form("raw_%s",fd));
       }
+      sprintf(sel_path,"/storage/shared/barwu/10thTry/0m_histograms/%s/selection-cut_%s_%s.root",fd,dt,fd);
+      sel_files[index]=new TFile(sel_path, "read");
+      sel_histograms[index]=(TH1D*)sel_files[index]->Get(Form("selection-cut_%s_%s",fd));
+      sprintf(geo_path,"/storage/shared/barwu/10thTry/0m_histograms/%s/geo-corrected_%s_%s.root",fd,dt,fd);
+      geo_files[index]=new TFile(geo_path, "read");
+      geo_histograms[index]=(TH1D*)geo_files[index]->Get(Form("geo-corrected_%s_%s",fd));
+      index++;
     }
   }
 
@@ -121,14 +121,14 @@ sprintf(geo_path,"/storage/shared/barwu/10thTry/0m_histograms/%s/FHC.10%05d.CAF_
       const char *fd=item.field;
       TVirtualPad *p=cs[i]->cd(k+1);
       if (k==7) {p->SetLogy();} //pad needs to be made logarithmic, not canvas
-      TH1D *hist3=raw_histograms[index%9];
+      TH1D *hist3=geo_histograms[index];
       hist3->SetLineColor(kBlue);
       hist3->Draw("histS");
       TH1D *hist2=sel_histograms[index];
       //hist2->SetLineColor(kGreen);
       hist2->SetLineColor(kTeal+10);
       hist2->Draw("samehistS");
-      TH1D *hist1=geo_histograms[index];
+      TH1D *hist1=raw_histograms[int(index%9)];
       hist1->SetLineColor(kPink);
       hist1->Draw("samehistS");
 

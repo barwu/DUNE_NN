@@ -46,22 +46,21 @@ double TotalMom, cos_angle, LongitudinalMom;
 double LepE=0., eP=0., ePip=0., ePim=0., ePi0=0., eOther=0.;
 int nipi0=0; //why is this int?
 double Ev=0.;
-const char* list_of_directories[40]={"0mgsimple","0m","1.75m","2m","4m","5.75m","8m","9.75m","12m","13.75m","16m",
-"17.75m","20m","21.75m","24m","25.75m","26.75m","28m","28.25m","28.5m","0mgsimpleRHC","0mRHC","1.75mRHC",
-"2mRHC","4mRHC","5.75mRHC","8mRHC","9.75mRHC","12mRHC","13.75mRHC","16mRHC","17.75mRHC","20mRHC",
-"21.75mRHC","24mRHC","25.75mRHC","26.75mRHC","28mRHC","28.25mRHC","28.5mRHC"};
+const char* list_of_directories[40]={"0mgsimple","0m","1.75m","2m","4m","5.75m","8m","9.75m","12m","13.75m","16m","17.75m","20m","21.75m","24m","25.75m","26.75m","28m",
+"28.25m","28.5m","0mgsimpleRHC","0mRHC","1.75mRHC","2mRHC","4mRHC","5.75mRHC","8mRHC","9.75mRHC","12mRHC","13.75mRHC","16mRHC","17.75mRHC","20mRHC","21.75mRHC","24mRHC",
+"25.75mRHC","26.75mRHC","28mRHC","28.25mRHC","28.5mRHC"};
 
 Para pr[]= //position is in units of cm, momentum is in units of GeV/c, angle is in units of rad,
 { // and energy is in  units of GeV
-  {"vtx_x", true, -300., 300. , &x_pos},
+  {"vtx_x", true, -300., 300., &x_pos},
   {"vtx_y", true, -100., 100., &y_pos},
   {"vtx_z", true, 50., 350., &z_pos},
   {"LepMomX", true, -2., 2., &XLepMom},
   {"LepMomY", true, -4., 2., &YLepMom},
   {"LepMomZ", true, -0.5, 4.5, &ZLepMom},
-  {"TotMom", false, 0., 5.,&TotalMom},
-  {"cos_LepNuAngle", false, 0., 1.,&cos_angle},
-  {"LongMom", false, -1., 5.,&LongitudinalMom}
+  {"TotMom", false, 0., 5., &TotalMom},
+  {"cos_LepNuAngle", false, 0., 1., &cos_angle},
+  {"LongMom", false, -1., 5., &LongitudinalMom}
 };
 
 vector<Sel_type> br=

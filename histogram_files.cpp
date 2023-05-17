@@ -72,6 +72,7 @@ void histogram_files()
   char eff[99];
   char caf[99];
   vector<TH1D*> histograms1, histograms2, histograms3;
+  int first_pass=0;
   for(auto sel:br)
   {
     const char* dt=sel.sel_name;
@@ -80,10 +81,11 @@ void histogram_files()
       char *fd=item.field;
       double l=item.l;
       double h=item.h;
-      histograms1.push_back(new TH1D(Form("h1_%s_%s", fd, dt), Form("raw %s %s",fd, dt), 100, l, h));
-      histograms2.push_back(new TH1D(Form("h2_%s_%s", fd, dt), Form("selected %s %s",fd, dt), 100, l, h));
-      histograms3.push_back(new TH1D(Form("h3_%s_%s", fd, dt), Form("geo corrected %s %s",fd, dt), 100, l, h));
+      if (first_pass==0) histograms1.push_back(new TH1D(Form("raw_%s", fd), Form("raw %s", fd), 100, l, h));
+      histograms2.push_back(new TH1D(Form("selection-cut_%s_%s", dt, fd), Form("selected %s %s", dt, fd), 100, l, h));
+      histograms3.push_back(new TH1D(Form("geo-corrected_%s_%s", dt, fd), Form("geo corrected %s %s", dt, fd), 100, l, h));
     }
+    first_pass=1;
   }
 
   const float directory_number=0; // Sometimes the directory # is an integer, sometimes its a fraction. Remember to change the wildcard and variable type accordingly.
@@ -142,18 +144,20 @@ void histogram_files()
       for (auto sel:br) {
         for (auto item:pr) {
           const char *fd=item.field;
-          TH1D* hist1=histograms1.at(n);
-          TH1D* hist2=histograms2.at(n);
-          TH1D* hist3=histograms3.at(n);
-          n++;
-          hist1->Fill(*item.field_value);
-          hist2->Fill(*item.field_value,*sel.sel_value);
+          if (n<9) {
+            TH1D* hist1=histograms1.at(n);
+            hist1->Fill(*item.field_value);
+          }
           double geo_eff=*sel.eff_value;
+          TH1D* hist2=histograms2.at(n);
+          hist2->Fill(*item.field_value,*sel.sel_value);
+          TH1D* hist3=histograms3.at(n);
           if (geo_eff<=0.0001) {
             continue;
           } else {
             hist3->Fill(*item.field_value,*sel.sel_value/geo_eff);
           }
+          n++;
         }
       }
     }
@@ -180,7 +184,7 @@ void histogram_files()
       sel_hist->Write();
       sel_files[index]->Close();
       geo_files[index]=new TFile(Form("/storage/shared/barwu/10thTry/0m_histograms/%s/geo-corrected_%s_%s.root",fd,dt,fd),"recreate");
-      TH1D* geo_hist=histograms2.at(index);
+      TH1D* geo_hist=histograms3.at(index);
       geo_hist->Write();
       geo_files[index]->Close();
       index++;
