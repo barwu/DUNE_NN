@@ -17,7 +17,7 @@ struct Para
   //static constexpr const char *const S;
   //constexpr const *char , VTX_X="vtx_x", *VTX_Y="vtx_y", *VTX_Z="vtx_z";
   //const char *LMX="LepMomX", *LMY="LepMomY", *LMZ="LepMomZ";
-  char field[30];
+  char field[20];
   bool iscaf;
   double l;
   double h;
@@ -49,12 +49,12 @@ Para pr[]= //position is in units of cm, momentum is in units of GeV/c, angle is
   {"vtx_x", true, -300., 300. , &x_pos},
   {"vtx_y", true, -100., 100., &y_pos},
   {"vtx_z", true, 50., 350., &z_pos},
-  {"LepMomX", true, -2., 2., &XLepMom},
-  {"LepMomY", true, -4., 2., &YLepMom},
-  {"LepMomZ", true, -0.5, 4.5, &ZLepMom},
-  {"TotMom", false, 0., 5.,&TotalMom},
+  {"LepMomX", true, -3., 3., &XLepMom},
+  {"LepMomY", true, -4.5, 2., &YLepMom},
+  {"LepMomZ", true, -1., 14, &ZLepMom},
+  {"TotMom", false, 0., 16.,&TotalMom},
   {"cos_LepNuAngle", false, 0., 1.,&cos_angle},
-  {"LongMom", false, -1., 5.,&LongitudinalMom}
+  {"LongMom", false, -1., 16.,&LongitudinalMom}
 };
 
 vector<Sel_type> br=
@@ -80,8 +80,8 @@ void histogram_files()
     {
       char *fd=item.field;
       double l=item.l;
-      double h=item.h;
-      if (first_pass==0) histograms1.push_back(new TH1D(Form("raw_%s", fd), Form("raw %s", fd), 100, l, h));
+      double h=item.h; //insert 9 check
+      if (first_pass<9) histograms1.push_back(new TH1D(Form("raw_%s", fd), Form("raw %s", fd), 100, l, h)); //remove dt from name
       histograms2.push_back(new TH1D(Form("selection-cut_%s_%s", dt, fd), Form("selected %s %s", dt, fd), 100, l, h));
       histograms3.push_back(new TH1D(Form("geo-corrected_%s_%s", dt, fd), Form("geo corrected %s %s", dt, fd), 100, l, h));
     }
@@ -144,20 +144,19 @@ void histogram_files()
       for (auto sel:br) {
         for (auto item:pr) {
           const char *fd=item.field;
-          if (n<9) {
-            TH1D* hist1=histograms1.at(n);
-            hist1->Fill(*item.field_value);
-          }
-          double geo_eff=*sel.eff_value;
+          TH1D* hist1;
+          if (n<9) hist1=histograms1.at(n);
           TH1D* hist2=histograms2.at(n);
-          hist2->Fill(*item.field_value,*sel.sel_value);
           TH1D* hist3=histograms3.at(n);
+          if (n<9) hist1->Fill(*item.field_value);
+          n++;
+          hist2->Fill(*item.field_value,*sel.sel_value);
+          double geo_eff=*sel.eff_value;
           if (geo_eff<=0.0001) {
             continue;
           } else {
             hist3->Fill(*item.field_value,*sel.sel_value/geo_eff);
           }
-          n++;
         }
       }
     }

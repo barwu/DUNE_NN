@@ -24,8 +24,8 @@ int muon_cont, muon_tra, muon_sel, hadr, comb;
 double muon_cont_eff, muon_tra_eff, muon_sel_eff, hadr_eff, comb_eff;
 Para pr[]=
 {
-  {"E_vis_true",0,6},
-  {"Ev",0,6}
+  {"E_vis_true",0,10},
+  {"Ev",0,10}
 };
 
 struct Sel_type
@@ -158,12 +158,18 @@ void visible_energy_distributions()
     }
   }
 
-  for (int j=0; j<=9999; j++)
+  const float directory_number=0; // Sometimes the directory # is an integer, sometimes its a fraction. Remember to change the wildcard and variable type accordingly.
+  cout<<directory_number<<endl;
+  for (int j=0; j<30000; j++)
   {
-    memset(eff, 0, 99); // clear array each time
-    memset(caf, 0, 99);
-    sprintf(eff,"/storage/shared/barwu/9thTry/eff_trees/FHC.100%04d.CAF_MuonEff.root",j);
-    sprintf(caf,"/storage/shared/cvilela/CAF/ND_v7/0%01d/FHC.100%04d.CAF.root",j/1000,j);
+    memset(eff, 0, 99); //clear array each time
+    memset(caf, 0, 99); 
+    // sprintf(eff,"/storage/shared/barwu/10thTry/combined1/%02dm/%02d/FHC.%03d%04d.CAF_Eff.root",directory_number,j/1000,int((directory_number+1)*100+j/10000),j%10000);
+    // sprintf(caf,"/storage/shared/barwu/10thTry/NDCAF/%02dm/%02d/FHC.%03d%04d.CAF.root",directory_number,j/1000,int((directory_number+1)*100+j/10000),j%10000);
+    sprintf(eff,"/storage/shared/barwu/10thTry/combined1/0m/%02d/FHC.10%05d.CAF_Eff.root",j/1000,j);
+    sprintf(caf,"/storage/shared/wshi/CAFs/NDFHC_PRISM/%02d/FHC.10%05d.CAF.root",j/1000,j);
+    //sprintf(eff,"/storage/shared/barwu/9thTry/eff_trees/FHC.100%04d.CAF_MuonEff.root",j);
+    //sprintf(caf,"/storage/shared/cvilela/CAF/ND_v7/0%01d/FHC.100%04d.CAF.root",j/1000,j);
     if(access(eff, 0)==0)
     {
       populate_histograms(eff,caf,histograms,j);
@@ -191,10 +197,10 @@ void visible_energy_distributions()
       const char *dt=sel.sel_name;
       TVirtualPad *p=cs[i]->cd(k+1);
       TH1D *hist3=histograms[2][n];
-      hist3->SetLineColor(kAzure);
+      hist3->SetLineColor(kBlue);
       hist3->Draw("histS");
       TH1D *hist2=histograms[1][n];
-      hist2->SetLineColor(kSpring);
+      hist2->SetLineColor(kTeal+10);
       hist2->Draw("samehistS");
       TH1D *hist1=histograms[0][n];
       hist1->SetLineColor(kPink);
@@ -208,25 +214,25 @@ void visible_energy_distributions()
       hist3->SetTitle(Form("%s: %s",fd,dt));
       hist3->GetXaxis()->SetTitle(Form("%s (GeV)",fd));
       hist3->GetYaxis()->SetTitle("# of events");
-      TLegend *leg=new TLegend(0.1,0.8,0.35,0.9);
-      leg->SetHeader("comparison"); 
-      leg->AddEntry(hist1, "raw distribution");
-      leg->AddEntry(hist2, "selection-cut distribution");
-      leg->AddEntry(hist3, "geo corrected distribution");
-      leg->Draw();
+      // TLegend *leg=new TLegend(0.1,0.8,0.35,0.9);
+      // leg->SetHeader("comparison"); 
+      // leg->AddEntry(hist1, "raw distribution");
+      // leg->AddEntry(hist2, "selection-cut distribution");
+      // leg->AddEntry(hist3, "geo corrected distribution");
+      // leg->Draw();
 
       rs[i]->cd(k+1);
       TH1D *rplot=(TH1D*)hist3->Clone();
       rplot->Divide(hist1);
       rplot->SetAxisRange(0.,1.,"Y");
-      rplot->SetLineColor(kViolet);
+      rplot->SetLineColor(kBlue);
       rplot->Draw("hist");
       n++;
       k++;
     }
     cs[i]->Update();
     rs[i]->Update();
-    cs[i]->SaveAs(Form("images/true_%s_distributions_with_veto_cut.png",fd));
-    rs[i]->SaveAs(Form("images/true_%s_correction_ratios_with_veto_cut.png",fd));
+    cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/0m_PRISM_true_%s.pdf",fd));
+    rs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/0m_PRISM_true_%s_ratios.pdf",fd));
   }
 }

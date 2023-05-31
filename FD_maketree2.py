@@ -30,9 +30,8 @@ meanPDPZ=array('f', [93.6072, 93.362, 90.346, 85.6266, 81.1443, 76.6664, 73.0865
                      60.8336, 59.1433, 57.7352])
 #gDecayZ=TGraph(14, OffAxisPoints, meanPDPZ)
 gDecayZ=interp1d(OffAxisPoints,meanPDPZ,fill_value='extrapolate')
-# These are used to translate between the near detector coordinate system and the neutrino beamline coordinate system.
-# We use this to calculate the average neutrino direction, assuming the mean neutrino production point as a function
-# of neutrino interaction x, which is given in the arrays above.
+# These are used to translate between the near detector coordinate system and the neutrino beamline coordinate system. We use this to calculate the average neutrino direction,
+# assuming the mean neutrino production point as a function of neutrino interaction x, which is given in the arrays above.
 beamRefDetCoord=[0.0, 0.05387, 6.66] #spherical coords, radians
 detRefBeamCoord=[0, 0, 562.1179] #xyz coords of reference detector position
 beamLineRotation=-0.101
@@ -62,7 +61,7 @@ def isContained(x, y, z) :
 FV_cut=True
 LAr_position=[-2800.,-2575.,-2400.,-2175.,-2000.,-1775.,-1600.,-1375.,-1200.,-975.,-800.,-575.,-400.,-175.,0.]
 vertex_position=[-299.,-292.,-285.,-278.,-271.,-264.,-216.,-168.,-120.,-72.,-24.,24.,72.,120.,168.,216.,264.,271.,278.,285.,292.,299.]
-TreeVars=["FD_evt_NDLAr_OffAxis_Sim_lep_start_v", "FD_evt_NDLAr_OffAxis_Sim_lep_start_p", "FD_evt_hadron_throw_result_NDLAr"]
+TreeVars=["ND_OffAxis_Sim_mu_start_v_xyz_LAr", "ND_OffAxis_Sim_mu_start_p_xyz_LAr", "hadron_throw_result_LAr"]
 
 # This is the function where everything happens
 # Analyse one file at a time, otherwise memory explodes!
@@ -70,20 +69,20 @@ TreeVars=["FD_evt_NDLAr_OffAxis_Sim_lep_start_v", "FD_evt_NDLAr_OffAxis_Sim_lep_
 def processFiles(f):
     # output="/storage/shared/barwu/10thTry/FDEff/"+splitext(basename(f))[0]+"_Eff.root"
     output="/storage/shared/barwu/10thTry/FDCAFfinal/"+splitext(basename(f))[0]+"_Eff.root"
-    # if exists(output)==True:
-    #      print("file already exists")
-    #      return None
+    if exists(output)==True:
+         print("file already exists")
+         return None
     try:
         # Get CAF TTree
         # GeoEffThrows=concatenate("{0}:GeoEffThrows".format(f), TreeVars, library="np")
-        cafTree=concatenate("{0}:cafTree;1".format(f), ["LepNuAngle"], library="np")
-        FD_sim_Results=concatenate("{0}:throwResults;1".format(f), TreeVars, library="np")
+        # cafTree=concatenate("{0}:cafTree;1".format(f), ["LepNuAngle"], library="np")
+        FD_sim_Results=concatenate("{0}:effTreeND;1".format(f), TreeVars, library="np")
+        throwsFD=concatenate("{0}:ThrowsFD".format(f), ['throwVtxY', 'throwVtxZ', 'throwRot'], library = "np")
     #leave except condition specification so that code crashes when there is another exception condition
     except exceptions.KeyInFileError as err:
         print("Couldn't find caf TTree in file {0} for {1}. Skipping.".format(f, err))
         return None
         #continue
-    throwsFD=concatenate("{0}:geoEffThrows".format(f), ['throwVtxY', 'throwVtxZ', 'throwRot'], library = "np")
 
     effs=std.vector(std.vector('double'))()
     effs_tracker=std.vector(std.vector('double'))()
@@ -100,11 +99,11 @@ def processFiles(f):
     tree.Branch("combined_eff", effs_combined)
 
     # Event loop
-    for i_event in range(len(FD_sim_Results['FD_evt_hadron_throw_result_NDLAr'])):
-        num_0_effs=0
-        num_high_effs=0
-        event=FD_sim_Results['FD_evt_hadron_throw_result_NDLAr'][i_event]
-        #print("i_event=",end="")
+    for i_event in range(len(FD_sim_Results['hadron_throw_result_LAr'])):
+        event=FD_sim_Results['hadron_throw_result_LAr'][i_event]
+        # num_0_effs=0
+        # num_high_effs=0
+        # #print("i_event=",end="")
         #print(i_event)
         #if i_event==10: break #use when debugging
         effs.clear() #remove past events' ND array efficiency data
@@ -113,8 +112,8 @@ def processFiles(f):
         effs_selected.clear()
         effs_combined.clear()
         #print(cafTree['LepNuAngle'][i_event])
-        #for det_pos in range(len(event)):
-        for det_pos in [14]: #14 is the last LAr position index
+        for det_pos in range(len(event)):
+        #for det_pos in [14]: #14 is the last LAr position index
             # print("LAr pos=",end="")
             # print(effValues['ND_LAr_dtctr_pos'][det_pos])
             # print("det_pos=",end="")
@@ -135,10 +134,10 @@ def processFiles(f):
                 thisEff_contained=0. # Contained muon efficiency
                 thisEff_combined=0. # Combined efficiency
 
-                this_vtx_x=FD_sim_Results["FD_evt_NDLAr_OffAxis_Sim_lep_start_v"][i_event][det_pos][vtx_pos][0]-LAr_position[det_pos]
-                this_vtx_y=FD_sim_Results["FD_evt_NDLAr_OffAxis_Sim_lep_start_v"][i_event][det_pos][vtx_pos][1]
-                this_vtx_z=FD_sim_Results["FD_evt_NDLAr_OffAxis_Sim_lep_start_v"][i_event][det_pos][vtx_pos][2]
-                this_p=FD_sim_Results["FD_evt_NDLAr_OffAxis_Sim_lep_start_p"][i_event][det_pos][vtx_pos]
+                this_vtx_x=FD_sim_Results["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][0]-LAr_position[det_pos]
+                this_vtx_y=FD_sim_Results["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][1]
+                this_vtx_z=FD_sim_Results["ND_OffAxis_Sim_mu_start_v_xyz_LAr"][i_event][det_pos][vtx_pos][2]
+                this_p=FD_sim_Results["ND_OffAxis_Sim_mu_start_p_xyz_LAr"][i_event][det_pos][vtx_pos]
 
                 #Check which throws are in the FV. throws_FV is a boolean array with one element per throw.
                 throws_FV=isFV_vec([this_vtx_x]*len(throwsFD["throwRot"][0]), #make sure that len(throwsFD["throwRot"][0])=4096
@@ -311,7 +310,7 @@ if __name__=="__main__":
     net.eval()
     #hadron_file="/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_99?.root"
     #hadron_file="/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_*.root"
-    hadron_file="/storage/shared/barwu/10thTry/FDCAFIntegration4GEC/caf_?.root"
+    hadron_file="/storage/shared/barwu/10thTry/FDGeoEffinND/FDGeoEff_524238_*.root"
     allFiles=glob(hadron_file)
     #if len(allFiles)<NUM_PROCS:
         #print("Fewer files than processes, setting NUM_PROC to {0}".format(len(allFiles)))
@@ -322,4 +321,4 @@ if __name__=="__main__":
     pool=Pool(NUM_PROCS) #don't use multiprocessing for debugging
     pool.map(processFiles, allFiles)
     #for file in allFiles: processFiles(file)
-    #processFiles("/storage/shared/barwu/10thTry/FDCAFIntegration4GEC/caf_10.root")
+    #processFiles("/storage/shared/barwu/10thTry/FDGeoEffinND/FDGeoEff_524238_3978.root")

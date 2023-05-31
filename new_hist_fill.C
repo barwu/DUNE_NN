@@ -20,7 +20,8 @@ struct Para
   //static constexpr const char *const S;
   //constexpr const *char , VTX_X="vtx_x", *VTX_Y="vtx_y", *VTX_Z="vtx_z";
   //const char *LMX="LepMomX", *LMY="LepMomY", *LMZ="LepMomZ";
-  char field[30];
+  char field[20];
+  const char* units;
   bool iscaf;
   double l;
   double h;
@@ -47,17 +48,19 @@ const char* list_of_directories[40]={"0mgsimple","0m","1.75m","2m","4m","5.75m",
 "28.25m","28.5m","0mgsimpleRHC","0mRHC","1.75mRHC","2mRHC","4mRHC","5.75mRHC","8mRHC","9.75mRHC","12mRHC","13.75mRHC","16mRHC","17.75mRHC","20mRHC","21.75mRHC","24mRHC",
 "25.75mRHC","26.75mRHC","28mRHC","28.25mRHC","28.5mRHC"};
 
-Para pr[]= //position is in units of cm, momentum is in units of GeV/c, angle is in units of rad,
-{ // and energy is in  units of GeV
-  {"vtx_x", true, -300., 300., &x_pos},
-  {"vtx_y", true, -100., 100., &y_pos},
-  {"vtx_z", true, 50., 350., &z_pos},
-  {"LepMomX", true, -2., 2., &XLepMom},
-  {"LepMomY", true, -4., 2., &YLepMom},
-  {"LepMomZ", true, -0.5, 4.5, &ZLepMom},
-  {"TotMom", false, 0., 5., &TotalMom},
-  {"cos_LepNuAngle", false, 0., 1., &cos_angle},
-  {"LongMom", false, -1., 5., &LongitudinalMom}
+Para pr[]= //position is in units of cm, momentum is in units of GeV/c, angle is in units of rad, and energy is in units of GeV
+{ //match the x-ranges with the FD histograms' x-ranges
+  {"vtx_x", "cm", true, -300., 300., &x_pos},
+  {"vtx_y", "cm", true, -100., 100., &y_pos},
+  {"vtx_z", "cm", true, 50., 350., &z_pos},
+  {"LepMomX", "GeV", true, -2., 2., &XLepMom},
+  {"LepMomY", "GeV", true, -4., 2., &YLepMom},
+  {"LepMomZ", "GeV", true, -0.5, 4.5, &ZLepMom},
+  {"TotMom", "GeV", false, 0., 5., &TotalMom},
+  {"cos_LepNuAngle", "", false, 0., 1., &cos_angle},
+  {"LongMom", "GeV", false, -1., 5., &LongitudinalMom}
+  //{"ND_Gen_numu_E", true, 0., 10.},
+  //{"ND_E_vis_true", true, 0., 10.}
 };
 
 vector<Sel_type> br=
@@ -76,7 +79,7 @@ void populate_histograms(char* eff,char* CAF,vector<TH1D*>hists1,vector<TH1D*>hi
   TTree *event_data=(TTree*)eff_file.Get("event_data");
   TTree *caf=(TTree*)caf_file.Get("caf");
   int isCC=0, inFV=0;
-  for(auto sel:br) 
+  for(auto sel:br)
   {
     if(sel.calced) continue;
     event_data->SetBranchAddress(sel.sel_name, sel.sel_value);
@@ -93,8 +96,8 @@ void populate_histograms(char* eff,char* CAF,vector<TH1D*>hists1,vector<TH1D*>hi
   //there are some non-CC events
   Long64_t nentries1=caf->GetEntries();
   Long64_t nentries2=event_data->GetEntries();
-  if (nentries1!=nentries2) {cout<<"The efficiency file"<<eff<<"has"<<nentries2
-  <<" events, and the CAF file"<<CAF<<"has"<<nentries1<<"events."<<endl;}
+  if (nentries1!=nentries2) {cout<<"The efficiency file"<<eff<<"has"<<nentries2<<" events, and the CAF file"<<CAF<<"has"<<nentries1<<"events."<<endl;}
+  // return;
   for (int i=0;i<nentries2;i++) {
     caf->GetEntry(i);
     event_data->GetEntry(i);
@@ -114,13 +117,16 @@ void populate_histograms(char* eff,char* CAF,vector<TH1D*>hists1,vector<TH1D*>hi
 
     int n=0;
     for (auto sel:br) {
+      int i_pr=0;
       for (auto item:pr) {
         const char *fd=item.field;
         TH1D* hist1=hists1.at(n);
         TH1D* hist2=hists2.at(n);
         TH1D* hist3=hists3.at(n);
-        n++;
-	      hist1->Fill(*item.field_value);
+	      n++;
+        i_pr++;
+        if (i_pr!=8) continue;
+        hist1->Fill(*item.field_value);
         hist2->Fill(*item.field_value,*sel.sel_value);
 	      double geo_eff=*sel.eff_value;
         if (geo_eff<=0.0001) {
@@ -161,10 +167,8 @@ void new_hist_fill()
   {
     memset(eff, 0, 99); //clear array each time
     memset(caf, 0, 99); 
-    // sprintf(eff,"/storage/shared/barwu/10thTry/combined1/%02dm/%02d/FHC.%03d%04d.CAF_Eff.root",directory_number,j/1000,
-    // int((directory_number+1)*100+j/10000),j%10000);
-    // sprintf(caf,"/storage/shared/barwu/10thTry/NDCAF/%02dm/%02d/FHC.%03d%04d.CAF.root",directory_number,j/1000,
-    // int((directory_number+1)*100+j/10000),j%10000);
+    // sprintf(eff,"/storage/shared/barwu/10thTry/combined1/%02dm/%02d/FHC.%03d%04d.CAF_Eff.root",directory_number,j/1000,int((directory_number+1)*100+j/10000),j%10000);
+    // sprintf(caf,"/storage/shared/barwu/10thTry/NDCAF/%02dm/%02d/FHC.%03d%04d.CAF.root",directory_number,j/1000,int((directory_number+1)*100+j/10000),j%10000);
     sprintf(eff,"/storage/shared/barwu/10thTry/combined1/0m/%02d/FHC.10%05d.CAF_Eff.root",j/1000,j);
     sprintf(caf,"/storage/shared/wshi/CAFs/NDFHC_PRISM/%02d/FHC.10%05d.CAF.root",j/1000,j);
     //sprintf(eff,"/storage/shared/barwu/9thTry/eff_trees/FHC.100%04d.CAF_MuonEff.root",j);
@@ -179,69 +183,77 @@ void new_hist_fill()
   }
 
   gROOT->SetBatch(kFALSE);
-  //gStyle->SetOptStat(000000000);
-  gStyle->SetOptStat(111111111);
-  TCanvas *c=new TCanvas("c", "c", 1800, 1000);
-  c->Divide(9,5);
-  int n=0;
-  for(auto sel:br)
-  {
-    const char *dt=sel.sel_name;
-    for(int k=0;k<9;k++)
-    {
-      Para item=pr[k];
-      const char *fd=item.field;
-      TVirtualPad *pad=c->cd(n+1);
-      if (k%9==7) {pad->SetLogy();} //pad needs to be made logarithmic, not canvas
-      TH1D *hist3=histograms3.at(n);
-      hist3->SetLineColor(kBlue);
-      hist3->Draw("histS");
-      TH1D *hist2=histograms2.at(n);
-      //hist2->SetLineColor(kGreen);
-      hist2->SetLineColor(kTeal+10);
-      hist2->Draw("samehistS");
-      TH1D *hist1=histograms1.at(n);
-      hist1->SetLineColor(kPink);
-      hist1->Draw("samehistS");
+  gStyle->SetOptStat(000000000);
+  //gStyle->SetOptStat(111111111);
+  // TCanvas *c=new TCanvas("c", "c", 1800, 1000);
+  // c->Divide(9,5);
+  // int n=0;
+  // for(auto sel:br)
+  // {
+  //   const char *dt=sel.sel_name;
+  //   for(int k=0;k<9;k++)
+  //   {
+  //     Para item=pr[k];
+  //     const char *fd=item.field;
+  //     const char *var_unit=item.units;
+  //     TVirtualPad *pad=c->cd(n+1);
+  //     if (k%9==7) {pad->SetLogy();} //pad needs to be made logarithmic, not canvas
+  //     TH1D *hist3=histograms3.at(n);
+  //     hist3->SetLineColor(kBlue);
+  //     hist3->Draw("histS");
+  //     TH1D *hist2=histograms2.at(n);
+  //     //hist2->SetLineColor(kGreen);
+  //     hist2->SetLineColor(kTeal+10);
+  //     hist2->Draw("samehistS");
+  //     TH1D *hist1=histograms1.at(n);
+  //     hist1->SetLineColor(kPink);
+  //     hist1->Draw("samehistS");
 
-      float max1=hist1->GetMaximum();
-      float max2=hist2->GetMaximum();
-      float max3=hist3->GetMaximum();
-      float upper_y_bound=max(max(max2,max3), max1)*1.4;
-      if (k%9!=7) {hist3->SetAxisRange(0.,upper_y_bound,"Y");}
-      //else {hist3->SetAxisRange(0.1,upper_y_bound,"Y");}
-      hist3->SetTitle(Form("%s: %s",fd,dt));
-      hist3->GetXaxis()->SetTitle(Form("%s",fd));
-      hist3->GetYaxis()->SetTitle("# of events");
-      TLegend *leg=new TLegend(0.1,0.77,0.4,0.9);
-      leg->SetHeader("comparison"); 
-      leg->AddEntry(hist1, "raw distribution");
-      leg->AddEntry(hist2, "selection-cut distribution");
-      leg->AddEntry(hist3, "geo corrected distribution");
-      leg->Draw();
-      gPad->Update();
-      TPaveStats *ps;
-      ps=(TPaveStats*)hist3->GetListOfFunctions()->FindObject("stats");
-      ps->SetFillStyle(0); 
-      n++;
-    }
-  }
-  //c->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/%02dm_PRISM_hists_all.png",directory_number));
+  //     float max1=hist1->GetMaximum();
+  //     float max2=hist2->GetMaximum();
+  //     float max3=hist3->GetMaximum();
+  //     float upper_y_bound=max(max(max2,max3), max1)*1.4;
+  //     if (k%9!=7) {hist3->SetAxisRange(0.,upper_y_bound,"Y");}
+  //     //else {hist3->SetAxisRange(0.1,upper_y_bound,"Y");}
+  //     hist3->SetTitle(Form("%s: %s",fd,dt));
+  //     hist3->GetXaxis()->SetTitle(Form("%s (%s)",fd,var_unit));
+  //     hist3->GetYaxis()->SetTitle("# of events");
+  //     TLegend *leg=new TLegend(0.1,0.77,0.4,0.9);
+  //     leg->SetHeader("comparison"); 
+  //     leg->AddEntry(hist1, "raw distribution");
+  //     leg->AddEntry(hist2, "selection-cut distribution");
+  //     leg->AddEntry(hist3, "geo corrected distribution");
+  //     leg->Draw();
+  //     gPad->Update();
+  //     // TPaveStats *ps;
+  //     // ps=(TPaveStats*)hist3->GetListOfFunctions()->FindObject("stats");
+  //     // ps->SetFillStyle(0); 
+  //     n++;
+  //   }
+  // }
+  // c->Update();
+  // c->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/0m_PRISM_all_1file.png"));
 
   TCanvas *cs[5];
-  n=0;
+  int n=0;
   int i=0;
   for(auto sel:br)
   {
     cs[i]=new TCanvas(Form("c%01d",i+1),Form("c%01d",i+1),1800,1000);
-    cs[i]->Divide(3,3);
+    //cs[i]->Divide(3,3);
     const char *dt=sel.sel_name;
     for(int k=0;k<9;k++)
     {
+      if (k!=7)
+      {
+        n++;
+        continue;
+      }
       Para item=pr[k];
       const char *fd=item.field;
-      TVirtualPad *p=cs[i]->cd(k+1);
-      if (k==7) {p->SetLogy();} //pad needs to be made logarithmic, not canvas
+      const char *var_unit=item.units;
+      //TVirtualPad *p=cs[i]->cd(k+1);
+      cs[i]->SetLogy(); //pad needs to be made logarithmic, not canvas //if (k==7) {p->SetLogy();}
       TH1D *hist3=histograms3.at(n);
       hist3->SetLineColor(kBlue);
       hist3->Draw("histS");
@@ -258,24 +270,24 @@ void new_hist_fill()
       float max3=hist3->GetMaximum();
       float upper_y_bound=max(max(max2,max3), max1);
       if (k!=7) {hist3->SetAxisRange(0.,upper_y_bound,"Y");}
-      //else {hist3->SetAxisRange(0.1,upper_y_bound,"Y");}
+      else {hist3->SetAxisRange(1,upper_y_bound,"Y");}
       hist3->SetTitle(Form("%s: %s",fd,dt));
-      hist3->GetXaxis()->SetTitle(Form("%s",fd));
+      hist3->GetXaxis()->SetTitle(Form("%s (%s)",fd,var_unit));
       hist3->GetYaxis()->SetTitle("# of events");
-      TLegend *leg=new TLegend(0.1,0.75,0.33,0.9);
-      leg->SetHeader("comparison"); 
-      leg->AddEntry(hist1, "raw distribution");
-      leg->AddEntry(hist2, "selection-cut distribution");
-      leg->AddEntry(hist3, "geo corrected distribution");
-      leg->Draw();
-      gPad->Update();
-      TPaveStats *ps;
-      ps=(TPaveStats*)hist3->GetListOfFunctions()->FindObject("stats");
-      ps->SetFillStyle(0);
+      // TLegend *leg=new TLegend(0.1,0.75,0.33,0.9);
+      // leg->SetHeader("comparison"); 
+      // leg->AddEntry(hist1, "raw distribution");
+      // leg->AddEntry(hist2, "selection-cut distribution");
+      // leg->AddEntry(hist3, "geo corrected distribution");
+      // leg->Draw();
+      // gPad->Update();
+      // TPaveStats *ps;
+      // ps=(TPaveStats*)hist1->GetListOfFunctions()->FindObject("stats");
+      // ps->SetFillStyle(0);
       n++;
     }
     cs[i]->Update();
-    //cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/%02dm_PRISM_hists_%s_6000.png",directory_number,dt));
+    cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/0m_PRISM_%s_angle_hists.png",dt));
     i++;
   }
 }

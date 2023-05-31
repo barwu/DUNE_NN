@@ -22,35 +22,34 @@ double numu_e=0;
 double e_vis_true=0;
 const int NUM_VTX=22, NUM_LAR_DTR=15;
 double LAr_position[NUM_LAR_DTR]={-2800.,-2575.,-2400.,-2175.,-2000.,-1775.,-1600.,-1375.,-1200.,-975.,-800.,-575.,-400.,-175.,0.};
-double vertex_position[NUM_VTX]={-299.,-292.,-285.,-278.,-271.,-264.,-216.,-168.,-120.,-72.,-24.,24.,72.,120.,168.,216.,264.,271.,
-                      278.,285.,292.,299.};
+double vertex_position[NUM_VTX]={-299.,-292.,-285.,-278.,-271.,-264.,-216.,-168.,-120.,-72.,-24.,24.,72.,120.,168.,216.,264.,271.,278.,285.,292.,299.};
 double total_detected[5][NUM_LAR_DTR][NUM_VTX]={};
 //float scale[30]={.19,.18,.18,.7,.7,1.05,.04,.034,.034,.07,.07,.07,.23,.21,.21,.73,.65,1.05,1.,1.,1.,1.05,1.05,1.05,.23,.2,.2,.7,.7,1.};
-float scale[45]={.19,.18,.18,.7,.7,1.05,1.,1.05,1.,.04,.034,.034,.07,.07,.07,1.,.075,.075,.23,.21,.21,.73,.65,1.05,1.,1.05,1.05,1.,
-                1.,1.,1.05,1.05,1.05,1.,1.05,1.05,.23,.2,.2,.7,.7,1.,1.,1.05,1.};
+float scale[45]={.2,.19,.19,.86,.86,1.05,1.05,1.05,1.05,.5,.4,.4,1.05,.9,.9,.9,.9,.9,.7,.6,.6,1.05,.9,1.05,1.05,1.05,1.,1.,1.,1.,1.05,1.05,1.05,1.05,1.05,1.05,
+                .66,.55,.55,1.05,.9,1.05,1.05,1.05,1.};
 
 struct Para
 {
   //static constexpr const char *const S;
   //constexpr const *char , VTX_X="vtx_x", *VTX_Y="vtx_y", *VTX_Z="vtx_z";
   //const char *LMX="LepMomX", *LMY="LepMomY", *LMZ="LepMomZ";
-  char field[30];
+  char field[20];
   double l;
   double h;
   //vector<vector<vector<double>>>* field_value;
 };
 
-Para pr[]=
-{
+Para pr[]= //position is in units of cm, momentum is in units of GeV/c, angle is in units of rad, and energy is in  units of GeV //check if the TTrees have LepNuAngle
+{ //match the x-ranges with the PRISM histograms' x-ranges
   {"vtx_x", -300., 300.},
   {"vtx_y", 5.385, 5.39},
   {"vtx_z",  659.995, 660.005},
-  {"LepMomX", -2.1, 3.},
-  {"LepMomY", -8., 2.},
-  {"LepMomZ", -1., 14.},
-  {"LepMomTot", 0., 16.},
-  //{"LepNuAngle", 0., 1.}
-  //{"LongMom", 0., 16.}
+  {"LepMomX", -2., 2.},
+  {"LepMomY", -4.5, 2.},
+  {"LepMomZ", -0.5, 7.},
+  {"LepMomTot", 0., 7.},
+  //{"cos_LepNuAngle", 0., 1.}
+  //{"LongMom", 0., 7.}
   {"ND_Gen_numu_E", 0., 10.},
   {"ND_E_vis_true", 0., 10.}
 };
@@ -111,6 +110,7 @@ void populate_histograms(char* eff,char* caf,vector<vector<TH1D*>>& hists1,vecto
           TH1D* hist1=hists1[n][k];
           TH1D* hist2=hists2[n][k];
           n++;
+          if (vtx_pos==0||vtx_pos==1||vtx_pos==2||vtx_pos==4||vtx_pos==5||vtx_pos==21||vtx_pos==20||vtx_pos==18||vtx_pos==17||vtx_pos==16) continue;
           if (k<3) {
             var_type=(*xyz_pos)[lar_pos][vtx_pos][k];
           } else if (k<6) {
@@ -161,11 +161,11 @@ void FD_selection_cuts()
     }
   }
 
-  for (int j=1; j<=10; j++)
+  for (int j=0; j<10; j++)
   {
     memset(eff, 0, 99); // clear array each time
     memset(caf, 0, 99);
-    sprintf(eff, "/storage/shared/barwu/10thTry/FDEff/FDGeoEff_62877585_99%d_Eff.root", j);
+    sprintf(eff, "/storage/shared/barwu/10thTry/FDEff_old5/FDGeoEff_62877585_99%d_Eff.root", j);
     sprintf(caf, "/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_99%d.root", j);
     if(access(eff, 0)==0)
     {
@@ -176,9 +176,9 @@ void FD_selection_cuts()
     }
   }
 
-  //gStyle->SetOptStat(000000000);
-  gStyle->SetOptStat(111111111);
-  TCanvas *c=new TCanvas("c","Energy Distributions",2000,1000);
+  gStyle->SetOptStat(000000000);
+  //gStyle->SetOptStat(111111111);
+  TCanvas *c=new TCanvas("c","FD-in-ND all graphs",2000,1000);
   TCanvas *r=new TCanvas("r","Ratio Plots",2000,1000);
   c->Divide(9,5);
   r->Divide(9,5);
@@ -194,7 +194,6 @@ void FD_selection_cuts()
       double lowerbound=item.l;
       double upperbound=item.h;
       TVirtualPad *pad=c->cd(i);
-      if (n%9==7) {pad->SetLogy();} //pad needs to be made logarithmic, not canvas
       TH1D *hist2=histograms2[i_select][n];
       hist2->SetLineColor(kTeal-3);
       hist2->Draw("hist");
@@ -204,7 +203,7 @@ void FD_selection_cuts()
 
       float max1=hist1->GetMaximum();
       //hist2->SetAxisRange(lowerbound,upperbound,"X");
-      if (n!=7) hist2->SetAxisRange(0.,1.16*max1,"Y");
+      hist2->SetAxisRange(0.,1.16*max1,"Y");
       hist2->SetTitle(Form("%s %s Selection Cut", fd, dt));
       hist2->GetXaxis()->SetTitle(fd);
       hist2->GetYaxis()->SetTitle("# of events");
@@ -227,8 +226,8 @@ void FD_selection_cuts()
     r->Update();
     i_select++;
   }
-  c->SaveAs("/home/barwu/repos/MuonEffNN/10thTry/FD_hists_all.png");
-  r->SaveAs("/home/barwu/repos/MuonEffNN/10thTry/FD_hists_ratios.png");
+  c->SaveAs("/home/barwu/repos/MuonEffNN/images/FD_62877585_hists_all_less_outer_positions.png");
+  r->SaveAs("/home/barwu/repos/MuonEffNN/images/FD_62877585_hists_ratios_less_outer_positions.png");
 
   TCanvas *cs[5];
   TCanvas *rs[5];
@@ -247,7 +246,6 @@ void FD_selection_cuts()
       double lowerbound=item.l;
       double upperbound=item.h;
       TVirtualPad *pads=cs[i-1]->cd(n+1);
-      if (n%9==7) {pads->SetLogy();}
       TH1D *hist2=histograms2[i-1][n];
       hist2->SetLineColor(kTeal-3);
       hist2->Draw("hist");
@@ -255,9 +253,9 @@ void FD_selection_cuts()
       hist1->SetLineColor(kPink);
       hist1->Draw("samehist");
 
-      float max1=1.16*hist1->GetMaximum();
-      if (n!=7) hist2->SetAxisRange(lowerbound,upperbound,"X");
-      hist2->SetAxisRange(0.,max1,"Y");
+      float max1=hist1->GetMaximum();
+      //hist2->SetAxisRange(lowerbound,upperbound,"X");
+      hist2->SetAxisRange(0.,1.16*max1,"Y");
       hist2->SetTitle(Form("%s %s Selection Cut", fd, dt));
       hist2->GetXaxis()->SetTitle(fd);
       hist2->GetYaxis()->SetTitle("# of events");
@@ -277,8 +275,8 @@ void FD_selection_cuts()
     }
     cs[i-1]->Update();
     rs[i-1]->Update();
-    cs[i-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/10thTry/FD_%s_hists.png", dt));
-    rs[i-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/10thTry/FD_%s_hists_ratios.png", dt));
+    cs[i-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/FD_62877585_%s_hists_less_outer_positions.png", dt));
+    rs[i-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/FD_62877585_%s_hists_ratios_less_outer_positions.png", dt));
     i++;
   }
 }

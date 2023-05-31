@@ -30,9 +30,8 @@ meanPDPZ=array('f', [93.6072, 93.362, 90.346, 85.6266, 81.1443, 76.6664, 73.0865
                      60.8336, 59.1433, 57.7352])
 #gDecayZ=TGraph(14, OffAxisPoints, meanPDPZ)
 gDecayZ=interp1d(OffAxisPoints,meanPDPZ,fill_value='extrapolate')
-# These are used to translate between the near detector coordinate system and the neutrino beamline coordinate system.
-# We use this to calculate the average neutrino direction, assuming the mean neutrino production point as a function
-# of neutrino interaction x, which is given in the arrays above.
+# These are used to translate between the near detector coordinate system and the neutrino beamline coordinate system.We use this to calculate the average neutrino direction,
+# assuming the mean neutrino production point as a function of neutrino interaction x, which is given in the arrays above.
 beamRefDetCoord=[0.0, 0.05387, 6.66] #some kind of offset
 detRefBeamCoord=[0, 0, 562.1179] #xyz coords of reference detector position
 beamLineRotation=-0.101
@@ -307,9 +306,9 @@ if __name__=="__main__":
     net=muonEffModel()
     net.load_state_dict(torch.load("/home/barwu/repos/MuonEffNN/8thTry/muonEff30.nn",map_location=torch.device('cpu')))
     net.eval()
-    #hadron_file="/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_99?.root"
+    hadron_file="/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_99?.root"
     #hadron_file="/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_*.root"
-    hadron_file="/storage/shared/barwu/FDGeoEffinND/FDGeoEff_62877585_*.root"
+    #hadron_file="/storage/shared/barwu/FDGeoEffinND/FDGeoEff_62877585_*.root"
     allFiles=glob(hadron_file)
     #if len(allFiles)<NUM_PROCS:
         #print("Fewer files than processes, setting NUM_PROC to {0}".format(len(allFiles)))

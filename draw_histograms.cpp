@@ -20,7 +20,8 @@ struct Para
   //static constexpr const char *const S;
   //constexpr const *char , VTX_X="vtx_x", *VTX_Y="vtx_y", *VTX_Z="vtx_z";
   //const char *LMX="LepMomX", *LMY="LepMomY", *LMZ="LepMomZ";
-  const char* field;
+  char field[20];
+  const char* units;
   bool iscaf;
   double l;
   double h;
@@ -48,16 +49,16 @@ const char* list_of_directories[40]={"0mgsimple","0m","1.75m","2m","4m","5.75m",
 "25.75mRHC","26.75mRHC","28mRHC","28.25mRHC","28.5mRHC"};
 
 Para pr[]= //position is in units of cm, momentum is in units of GeV/c, angle is in units of rad, and energy is in  units of GeV
-{
-  {"vtx_x", true, -300., 300., &x_pos},
-  {"vtx_y", true, -100., 100., &y_pos},
-  {"vtx_z", true, 50., 350., &z_pos},
-  {"LepMomX", true, -2., 2., &XLepMom},
-  {"LepMomY", true, -4., 2., &YLepMom},
-  {"LepMomZ", true, -0.5, 4.5, &ZLepMom},
-  {"TotMom", false, 0., 5., &TotalMom},
-  {"cos_LepNuAngle", false, 0., 1., &cos_angle},
-  {"LongMom", false, -1., 5., &LongitudinalMom}
+{ //match the x-ranges with the FD histograms' x-ranges
+  {"vtx_x", "cm", true, -300., 300., &x_pos},
+  {"vtx_y", "cm", true, -100., 100., &y_pos},
+  {"vtx_z", "cm", true, 50., 350., &z_pos},
+  {"LepMomX", "GeV", true, -2., 2., &XLepMom},
+  {"LepMomY", "GeV", true, -4.5, 2., &YLepMom},
+  {"LepMomZ", "GeV", true, -0.5, 7., &ZLepMom},
+  {"TotMom", "GeV", false, 0., 7., &TotalMom},
+  {"cos_LepNuAngle", "", false, 0., 1., &cos_angle},
+  {"LongMom", "GeV", false, -1., 7., &LongitudinalMom}
 };
 
 vector<Sel_type> br=
@@ -90,8 +91,7 @@ void draw_histograms()
     for (Para item:pr)
     {
       const char *fd=item.field;
-      if(sel.calced) continue;
-      else if (index<9)
+      if (index<9)
       {
         sprintf(raw_path,"/storage/shared/barwu/10thTry/0m_histograms/%s/raw_%s.root",fd,fd);
         raw_files[int(index)]=new TFile(raw_path, "read");
@@ -99,26 +99,97 @@ void draw_histograms()
       }
       sprintf(sel_path,"/storage/shared/barwu/10thTry/0m_histograms/%s/selection-cut_%s_%s.root",fd,dt,fd);
       sel_files[index]=new TFile(sel_path, "read");
-      sel_histograms[index]=(TH1D*)sel_files[index]->Get(Form("selection-cut_%s_%s",fd));
+      sel_histograms[index]=(TH1D*)sel_files[index]->Get(Form("selection-cut_%s_%s",dt,fd));
       sprintf(geo_path,"/storage/shared/barwu/10thTry/0m_histograms/%s/geo-corrected_%s_%s.root",fd,dt,fd);
       geo_files[index]=new TFile(geo_path, "read");
-      geo_histograms[index]=(TH1D*)geo_files[index]->Get(Form("geo-corrected_%s_%s",fd));
+      geo_histograms[index]=(TH1D*)geo_files[index]->Get(Form("geo-corrected_%s_%s",dt,fd));
       index++;
     }
   }
 
+  //gStyle->SetOptStat(000000000);
+  gStyle->SetOptStat(111111111);
+  TCanvas *c=new TCanvas("c", "c", 1800, 1000);
+  c->Divide(9,5);
+  TCanvas *r=new TCanvas("r", "r", 1800, 1000);
+  r->Divide(9,5);
+  index=0;
+  for(auto sel:br)
+  {
+    const char *dt=sel.sel_name;
+    for(int k=0;k<9;k++)
+    {
+      Para item=pr[k];
+      double lowerbound=item.l;
+      double upperbound=item.h;
+      const char *fd=item.field;
+      const char *var_unit=item.units;
+      TVirtualPad *pad=c->cd(index+1);
+      if (k%9==7) {pad->SetLogy();} //pad needs to be made logarithmic, not canvas
+      TH1D *hist3=geo_histograms[index];
+      hist3->SetLineColor(kBlue);
+      hist3->Draw("histS");
+      TH1D *hist2=sel_histograms[index];
+      //hist2->SetLineColor(kGreen);
+      hist2->SetLineColor(kTeal+10);
+      hist2->Draw("samehistS");
+      TH1D *hist1=raw_histograms[int(index%9)];
+      hist1->SetLineColor(kPink);
+      hist1->Draw("samehistS");
+
+      float max1=hist1->GetMaximum();
+      float max2=hist2->GetMaximum();
+      float max3=hist3->GetMaximum();
+      float upper_y_bound=max(max(max2,max3), max1)*1.4;
+      hist3->SetAxisRange(lowerbound,upperbound,"X");
+      if (k%9!=7) {hist3->SetAxisRange(0.,upper_y_bound,"Y");}
+      //else {hist3->SetAxisRange(0.1,upper_y_bound,"Y");}
+      hist3->SetTitle(Form("%s: %s",fd,dt));
+      hist3->GetXaxis()->SetTitle(Form("%s (%s)",fd,var_unit));
+      hist3->GetYaxis()->SetTitle("# of events");
+      TLegend *leg=new TLegend(0.1,0.77,0.4,0.9);
+      leg->SetHeader("comparison"); 
+      leg->AddEntry(hist1, "raw distribution");
+      leg->AddEntry(hist2, "selection-cut distribution");
+      leg->AddEntry(hist3, "geo corrected distribution");
+      leg->Draw();
+      gPad->Update();
+      TPaveStats *ps;
+      ps=(TPaveStats*)hist3->GetListOfFunctions()->FindObject("stats");
+      ps->SetFillStyle(0);
+      
+      r->cd(index+1);
+      TH1D *rplot=(TH1D*)hist2->Clone();
+      rplot->Divide(hist1);
+      rplot->SetAxisRange(0.,1.,"Y");
+      rplot->SetLineColor(kBlue);
+      rplot->Draw("hist");
+      index++;
+    }
+  }
+  c->Update();
+  c->SaveAs("/home/barwu/repos/MuonEffNN/images/new_0m_PRISM_hists_all.pdf");
+  r->Update();
+  r->SaveAs("/home/barwu/repos/MuonEffNN/images/new_0m_PRISM_hists_all_ratios.pdf");
+
   TCanvas *cs[5];
+  TCanvas *rs[5];
   index=0;
   int i=0;
   for(auto sel:br)
   {
     cs[i]=new TCanvas(Form("c%01d",i+1),Form("c%01d",i+1),1800,1000);
     cs[i]->Divide(3,3);
+    rs[i]=new TCanvas(Form("r%01d",i+1),Form("r%01d",i+1),1800,1000);
+    rs[i]->Divide(3,3);
     const char *dt=sel.sel_name;
     for(int k=0;k<9;k++)
     {
       Para item=pr[k];
+      double lowerbound=item.l;
+      double upperbound=item.h;
       const char *fd=item.field;
+      const char *var_unit=item.units;
       TVirtualPad *p=cs[i]->cd(k+1);
       if (k==7) {p->SetLogy();} //pad needs to be made logarithmic, not canvas
       TH1D *hist3=geo_histograms[index];
@@ -135,11 +206,12 @@ void draw_histograms()
       float max1=hist1->GetMaximum();
       float max2=hist2->GetMaximum();
       float max3=hist3->GetMaximum();
-      float upper_y_bound=max(max(max2,max3), max1);
-      if (k!=7) {hist3->SetAxisRange(0.,upper_y_bound,"Y");}
-      //else {hist3->SetAxisRange(0.1,upper_y_bound,"Y");}
+      float upper_y_bound=max(max(max2,max3), max1)*1.35;
+      hist3->SetAxisRange(lowerbound,upperbound,"X");
+      if (k!=7) hist3->SetAxisRange(0.,upper_y_bound,"Y");
+      //else hist3->SetAxisRange(0.1,upper_y_bound,"Y");
       hist3->SetTitle(Form("%s: %s",fd,dt));
-      hist3->GetXaxis()->SetTitle(Form("%s",fd));
+      hist3->GetXaxis()->SetTitle(Form("%s (%s)",fd,var_unit));
       hist3->GetYaxis()->SetTitle("# of events");
       TLegend *leg=new TLegend(0.1,0.75,0.33,0.9);
       leg->SetHeader("comparison"); 
@@ -151,10 +223,19 @@ void draw_histograms()
       TPaveStats *ps;
       ps=(TPaveStats*)hist3->GetListOfFunctions()->FindObject("stats");
       ps->SetFillStyle(0);
+
+      rs[i]->cd(k+1);
+      TH1D *rplot=(TH1D*)hist2->Clone();
+      rplot->Divide(hist1);
+      rplot->SetAxisRange(0.,1.,"Y");
+      rplot->SetLineColor(kBlue);
+      rplot->Draw("hist");
       index++;
     }
     cs[i]->Update();
-    //cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/0m_%s_PRISM_hists.png",directory_number,dt));
+    cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/new_0m_%s_PRISM_hists.pdf",dt));
+    rs[i]->Update();
+    rs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/new_0m_%s_PRISM_hists_ratios.pdf",dt));
     i++;
   }
 }

@@ -20,7 +20,8 @@ struct Para
   //static constexpr const char *const S;
   //constexpr const *char , VTX_X="vtx_x", *VTX_Y="vtx_y", *VTX_Z="vtx_z";
   //const char *LMX="LepMomX", *LMY="LepMomY", *LMZ="LepMomZ";
-  char field[30];
+  char field[20];
+  const char* units;
   bool iscaf;
   double l;
   double h;
@@ -50,17 +51,17 @@ const char* list_of_directories[40]={"0mgsimple","0m","1.75m","2m","4m","5.75m",
 "28.25m","28.5m","0mgsimpleRHC","0mRHC","1.75mRHC","2mRHC","4mRHC","5.75mRHC","8mRHC","9.75mRHC","12mRHC","13.75mRHC","16mRHC","17.75mRHC","20mRHC","21.75mRHC","24mRHC",
 "25.75mRHC","26.75mRHC","28mRHC","28.25mRHC","28.5mRHC"};
 
-Para pr[]= //position is in units of cm, momentum is in units of GeV/c, angle is in units of rad,
-{ // and energy is in  units of GeV
-  {"vtx_x", true, -300., 300., &x_pos},
-  {"vtx_y", true, -100., 100., &y_pos},
-  {"vtx_z", true, 50., 350., &z_pos},
-  {"LepMomX", true, -2., 2., &XLepMom},
-  {"LepMomY", true, -4., 2., &YLepMom},
-  {"LepMomZ", true, -0.5, 4.5, &ZLepMom},
-  {"TotMom", false, 0., 5., &TotalMom},
-  {"cos_LepNuAngle", false, 0., 1., &cos_angle},
-  {"LongMom", false, -1., 5., &LongitudinalMom}
+Para pr[]= //position is in units of cm, momentum is in units of GeV/c, angle is in units of rad, and energy is in  units of GeV
+{
+  {"vtx_x", "cm", true, -300., 300., &x_pos},
+  {"vtx_y", "cm", true, -100., 100., &y_pos},
+  {"vtx_z", "cm", true, 50., 350., &z_pos},
+  {"LepMomX", "GeV", true, -2., 2., &XLepMom},
+  {"LepMomY", "GeV", true, -4., 2., &YLepMom},
+  {"LepMomZ", "GeV", true, -0.5, 4.5, &ZLepMom},
+  {"TotMom", "GeV", false, 0., 5., &TotalMom},
+  {"cos_LepNuAngle", "", false, 0., 1., &cos_angle},
+  {"LongMom", "GeV", false, -1., 5., &LongitudinalMom}
 };
 
 vector<Sel_type> br=
@@ -109,8 +110,7 @@ void populate_histograms(char* eff,char* CAF,vector<TH1D*>hists1,vector<TH1D*>hi
   //there are some non-CC events
   Long64_t nentries1=caf->GetEntries();
   Long64_t nentries2=event_data->GetEntries();
-  if (nentries1!=nentries2) {cout<<"The efficiency file"<<eff<<"has"<<nentries2
-  <<" events, and the CAF file"<<CAF<<"has"<<nentries1<<"events."<<endl;}
+  if (nentries1!=nentries2) {cout<<"The efficiency file"<<eff<<"has"<<nentries2<<" events, and the CAF file"<<CAF<<"has"<<nentries1<<"events."<<endl;}
   for (int i=0;i<nentries2;i++) {
     caf->GetEntry(i);
     event_data->GetEntry(i);
@@ -210,6 +210,7 @@ void PRISM_hists()
     {
       Para item=pr[k];
       const char *fd=item.field;
+      const char *var_unit=item.units;
       TVirtualPad *pad=c->cd(n+1);
       if (k%9==7) {pad->SetLogy();} //pad needs to be made logarithmic, not canvas
       TH1D *hist3=histograms3.at(n);
@@ -230,7 +231,7 @@ void PRISM_hists()
       if (k%9!=7) {hist3->SetAxisRange(0.,upper_y_bound,"Y");}
       //else {hist3->SetAxisRange(0.1,upper_y_bound,"Y");}
       hist3->SetTitle(Form("%s: %s",fd,dt));
-      hist3->GetXaxis()->SetTitle(Form("%s",fd));
+      hist3->GetXaxis()->SetTitle(Form("%s (%s)",fd,var_unit));
       hist3->GetYaxis()->SetTitle("# of events");
       TLegend *leg=new TLegend(0.1,0.77,0.4,0.9);
       leg->SetHeader("comparison"); 
@@ -245,6 +246,7 @@ void PRISM_hists()
       n++;
     }
   }
+  c->Update();
   c->SaveAs("/home/barwu/repos/MuonEffNN/images/PRISM_hists_all_0-9999_6GeV_energy_cut.png");
 
   TCanvas *cs[5];
@@ -259,6 +261,7 @@ void PRISM_hists()
     {
       Para item=pr[k];
       const char *fd=item.field;
+      const char *var_unit=item.units;
       TVirtualPad *p=cs[i]->cd(k+1);
       if (k==7) {p->SetLogy();} //pad needs to be made logarithmic, not canvas
       TH1D *hist3=histograms3.at(n);
@@ -279,7 +282,7 @@ void PRISM_hists()
       if (k!=7) {hist3->SetAxisRange(0.,upper_y_bound,"Y");}
       //else {hist3->SetAxisRange(0.1,upper_y_bound,"Y");}
       hist3->SetTitle(Form("%s: %s",fd,dt));
-      hist3->GetXaxis()->SetTitle(Form("%s",fd));
+      hist3->GetXaxis()->SetTitle(Form("%s (%s)",fd,var_unit));
       hist3->GetYaxis()->SetTitle("# of events");
       TLegend *leg=new TLegend(0.1,0.75,0.33,0.9);
       leg->SetHeader("comparison"); 
