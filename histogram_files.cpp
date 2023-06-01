@@ -150,11 +150,11 @@ void histogram_files()
           TH1D* hist3=histograms3.at(n);
           if (n<9) hist1->Fill(*item.field_value);
           n++;
-          hist2->Fill(*item.field_value,*sel.sel_value);
           double geo_eff=*sel.eff_value;
-          if (geo_eff<=0.0001) {
+          if (geo_eff<=0.01) {
             continue;
           } else {
+            hist2->Fill(*item.field_value,*sel.sel_value);
             hist3->Fill(*item.field_value,*sel.sel_value/geo_eff);
           }
         }
@@ -173,16 +173,16 @@ void histogram_files()
     for (Para item:pr) {
       const char *fd=item.field;
       if (index<9) {
-        raw_files[index]=new TFile(Form("/storage/shared/barwu/10thTry/0m_histograms/%s/raw_%s.root",fd,fd),"recreate");
+        raw_files[index]=new TFile(Form("/storage/shared/barwu/10thTry/0m_histograms/0.01_eff_veto_cut/%s/raw_%s.root",fd,fd),"recreate");
         TH1D* raw_hist=histograms1.at(index);
         raw_hist->Write();
         raw_files[index]->Close();
       }
-      sel_files[index]=new TFile(Form("/storage/shared/barwu/10thTry/0m_histograms/%s/selection-cut_%s_%s.root",fd,dt,fd),"recreate");
+      sel_files[index]=new TFile(Form("/storage/shared/barwu/10thTry/0m_histograms/0.01_eff_veto_cut/%s/selection-cut_%s_%s.root",fd,dt,fd),"recreate");
       TH1D* sel_hist=histograms2.at(index);
       sel_hist->Write();
       sel_files[index]->Close();
-      geo_files[index]=new TFile(Form("/storage/shared/barwu/10thTry/0m_histograms/%s/geo-corrected_%s_%s.root",fd,dt,fd),"recreate");
+      geo_files[index]=new TFile(Form("/storage/shared/barwu/10thTry/0m_histograms/0.01_eff_veto_cut/%s/geo-corrected_%s_%s.root",fd,dt,fd),"recreate");
       TH1D* geo_hist=histograms3.at(index);
       geo_hist->Write();
       geo_files[index]->Close();

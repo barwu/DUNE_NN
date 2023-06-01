@@ -93,14 +93,14 @@ void draw_histograms()
       const char *fd=item.field;
       if (index<9)
       {
-        sprintf(raw_path,"/storage/shared/barwu/10thTry/0m_histograms/%s/raw_%s.root",fd,fd);
+        sprintf(raw_path,"/storage/shared/barwu/10thTry/0m_histograms/0.1_eff_veto_cut/%s/raw_%s.root",fd,fd);
         raw_files[int(index)]=new TFile(raw_path, "read");
         raw_histograms[int(index)]=(TH1D*)raw_files[int(index)]->Get(Form("raw_%s",fd));
       }
-      sprintf(sel_path,"/storage/shared/barwu/10thTry/0m_histograms/%s/selection-cut_%s_%s.root",fd,dt,fd);
+      sprintf(sel_path,"/storage/shared/barwu/10thTry/0m_histograms/0.1_eff_veto_cut/%s/selection-cut_%s_%s.root",fd,dt,fd);
       sel_files[index]=new TFile(sel_path, "read");
       sel_histograms[index]=(TH1D*)sel_files[index]->Get(Form("selection-cut_%s_%s",dt,fd));
-      sprintf(geo_path,"/storage/shared/barwu/10thTry/0m_histograms/%s/geo-corrected_%s_%s.root",fd,dt,fd);
+      sprintf(geo_path,"/storage/shared/barwu/10thTry/0m_histograms/0.1_eff_veto_cut/%s/geo-corrected_%s_%s.root",fd,dt,fd);
       geo_files[index]=new TFile(geo_path, "read");
       geo_histograms[index]=(TH1D*)geo_files[index]->Get(Form("geo-corrected_%s_%s",dt,fd));
       index++;
@@ -161,16 +161,20 @@ void draw_histograms()
       r->cd(index+1);
       TH1D *rplot=(TH1D*)hist2->Clone();
       rplot->Divide(hist1);
+      rplot->SetAxisRange(lowerbound,upperbound,"X");
       rplot->SetAxisRange(0.,1.,"Y");
       rplot->SetLineColor(kBlue);
       rplot->Draw("hist");
+      // TPaveStats *prs;
+      // prs=(TPaveStats*)rplot->GetListOfFunctions()->FindObject("stats");
+      // prs->SetFillStyle(0);
       index++;
     }
   }
   c->Update();
-  c->SaveAs("/home/barwu/repos/MuonEffNN/images/new_0m_PRISM_hists_all.pdf");
+  c->SaveAs("/home/barwu/repos/MuonEffNN/images/0m_PRISM_0.01_eff_veto_cut_hists_all.pdf");
   r->Update();
-  r->SaveAs("/home/barwu/repos/MuonEffNN/images/new_0m_PRISM_hists_all_ratios.pdf");
+  r->SaveAs("/home/barwu/repos/MuonEffNN/images/0m_PRISM_hists_0.01_eff_veto_cut_all_ratios.pdf");
 
   TCanvas *cs[5];
   TCanvas *rs[5];
@@ -227,15 +231,19 @@ void draw_histograms()
       rs[i]->cd(k+1);
       TH1D *rplot=(TH1D*)hist2->Clone();
       rplot->Divide(hist1);
+      rplot->SetAxisRange(lowerbound,upperbound,"X");
       rplot->SetAxisRange(0.,1.,"Y");
       rplot->SetLineColor(kBlue);
       rplot->Draw("hist");
+      // TPaveStats *prs;
+      // prs=(TPaveStats*)rplot->GetListOfFunctions()->FindObject("stats");
+      // prs->SetFillStyle(0);
       index++;
     }
     cs[i]->Update();
-    cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/new_0m_%s_PRISM_hists.pdf",dt));
+    cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/0m_%s_PRISM_0.01_eff_veto_cut_hists.pdf",dt));
     rs[i]->Update();
-    rs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/new_0m_%s_PRISM_hists_ratios.pdf",dt));
+    rs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/0m_%s_PRISM_0.01_eff_veto_cut_hists_ratios.pdf",dt));
     i++;
   }
 }

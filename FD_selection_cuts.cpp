@@ -122,7 +122,15 @@ void populate_histograms(char* eff,char* caf,vector<vector<TH1D*>>& hists1,vecto
           //if (k==1) {cout<<var_type<<" ";}
           vector<vector<double>>* eff_value=sel.eff_value;
           vector<vector<double>>& eff_value2=*eff_value;
-          double geo_eff=eff_value2[lar_pos][vtx_pos];
+          double geo_eff;
+          if (vtx_pos==3)
+          {
+            geo_eff=(eff_value2[lar_pos][0]+eff_value2[lar_pos][1]+eff_value2[lar_pos][2]+eff_value2[lar_pos][3]+eff_value2[lar_pos][4]+eff_value2[lar_pos][5])/6.;
+          } else if (vtx_pos==19) {
+            geo_eff=(eff_value2[lar_pos][21]+eff_value2[lar_pos][20]+eff_value2[lar_pos][19]+eff_value2[lar_pos][18]+eff_value2[lar_pos][17]+eff_value2[lar_pos][16])/6.;
+          } else {
+            geo_eff=eff_value2[lar_pos][vtx_pos];
+          }
           if (geo_eff>1.) {
             cout<<"efficiency of event "<<i<<" at position "<<LAr_position[lar_pos]<<", "
             <<vertex_position[vtx_pos]<<" is "<<geo_eff<<endl;
@@ -226,8 +234,8 @@ void FD_selection_cuts()
     r->Update();
     i_select++;
   }
-  c->SaveAs("/home/barwu/repos/MuonEffNN/images/FD_62877585_hists_all_less_outer_positions.png");
-  r->SaveAs("/home/barwu/repos/MuonEffNN/images/FD_62877585_hists_ratios_less_outer_positions.png");
+  c->SaveAs("/home/barwu/repos/MuonEffNN/images/new_FD_62877585_hists_all_less_outer_positions.png");
+  r->SaveAs("/home/barwu/repos/MuonEffNN/images/new_FD_62877585_hists_ratios_less_outer_positions.png");
 
   TCanvas *cs[5];
   TCanvas *rs[5];
@@ -275,8 +283,8 @@ void FD_selection_cuts()
     }
     cs[i-1]->Update();
     rs[i-1]->Update();
-    cs[i-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/FD_62877585_%s_hists_less_outer_positions.png", dt));
-    rs[i-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/FD_62877585_%s_hists_ratios_less_outer_positions.png", dt));
+    cs[i-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/new_FD_62877585_%s_hists_less_outer_positions.png", dt));
+    rs[i-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/new_FD_62877585_%s_hists_ratios_less_outer_positions.png", dt));
     i++;
   }
 }
