@@ -122,7 +122,7 @@ void histogram_files()
     //there are some non-CC events
     Long64_t nentries1=caf_tree->GetEntries();
     Long64_t nentries2=event_data->GetEntries();
-    if (nentries1!=nentries2) {cout<<"The efficiency file"<<eff<<"has"<<nentries2<<" events, and the CAF file"<<caf<<"has"<<nentries1<<"events."<<endl;}
+    if (nentries1!=nentries2) {cout<<"The efficiency file "<<eff<<" has"<<nentries2<<" events, and the CAF file "<<caf<<" has"<<nentries1<<" events."<<endl;}
     for (int i=0;i<nentries2;i++) {
       caf_tree->GetEntry(i);
       event_data->GetEntry(i);

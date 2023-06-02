@@ -96,7 +96,7 @@ void populate_histograms(char* eff,char* CAF,vector<TH1D*>hists1,vector<TH1D*>hi
   //there are some non-CC events
   Long64_t nentries1=caf->GetEntries();
   Long64_t nentries2=event_data->GetEntries();
-  if (nentries1!=nentries2) {cout<<"The efficiency file"<<eff<<"has"<<nentries2<<" events, and the CAF file"<<CAF<<"has"<<nentries1<<"events."<<endl;}
+  if (nentries1!=nentries2) {cout<<"The efficiency file "<<eff<<" has "<<nentries2<<" events, and the CAF file "<<CAF<<" has "<<nentries1<<" events."<<endl;}
   // return;
   for (int i=0;i<nentries2;i++) {
     caf->GetEntry(i);

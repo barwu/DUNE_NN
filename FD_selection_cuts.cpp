@@ -25,8 +25,8 @@ double LAr_position[NUM_LAR_DTR]={-2800.,-2575.,-2400.,-2175.,-2000.,-1775.,-160
 double vertex_position[NUM_VTX]={-299.,-292.,-285.,-278.,-271.,-264.,-216.,-168.,-120.,-72.,-24.,24.,72.,120.,168.,216.,264.,271.,278.,285.,292.,299.};
 double total_detected[5][NUM_LAR_DTR][NUM_VTX]={};
 //float scale[30]={.19,.18,.18,.7,.7,1.05,.04,.034,.034,.07,.07,.07,.23,.21,.21,.73,.65,1.05,1.,1.,1.,1.05,1.05,1.05,.23,.2,.2,.7,.7,1.};
-float scale[45]={.2,.19,.19,.86,.86,1.05,1.05,1.05,1.05,.5,.4,.4,1.05,.9,.9,.9,.9,.9,.7,.6,.6,1.05,.9,1.05,1.05,1.05,1.,1.,1.,1.,1.05,1.05,1.05,1.05,1.05,1.05,
-                .66,.55,.55,1.05,.9,1.05,1.05,1.05,1.};
+float scale[45]={.64,.56,.56,1.05,1.05,1.05,1.05,1.,1.,.85,.51,.51,1.05,.7,.75,.7,.7,.7,.8,.54,.54,1.05,.8,1.05,1.05,1.,1.,1.,1.,1.,1.05,1.05,1.05,1.05,1.05,1.05,
+                .75,.5,.5,1.05,.75,1.05,1.05,1.,1.};
 
 struct Para
 {
@@ -92,8 +92,7 @@ void populate_histograms(char* eff,char* caf,vector<vector<TH1D*>>& hists1,vecto
 
   Long64_t nentries1=event_data->GetEntries();
   Long64_t nentries2=thing->GetEntries();
-  if (nentries1!=nentries2) {cout<<"The efficiency file"<<eff<<"has"<<nentries2
-  <<" events, and the CAF file"<<caf<<"has"<<nentries1<<"events."<<endl;}
+  if (nentries1!=nentries2) {cout<<"The efficiency file "<<eff<<" has "<<nentries2<<" events, and the CAF file "<<caf<<" has "<<nentries1<<" events."<<endl;}
   for (int i=0;i<nentries2;i++) {
     event_data->GetEntry(i);
     thing->GetEntry(i);
@@ -110,33 +109,20 @@ void populate_histograms(char* eff,char* caf,vector<vector<TH1D*>>& hists1,vecto
           TH1D* hist1=hists1[n][k];
           TH1D* hist2=hists2[n][k];
           n++;
-          if (vtx_pos==0||vtx_pos==1||vtx_pos==2||vtx_pos==4||vtx_pos==5||vtx_pos==21||vtx_pos==20||vtx_pos==18||vtx_pos==17||vtx_pos==16) continue;
-          if (k<3) {
-            var_type=(*xyz_pos)[lar_pos][vtx_pos][k];
-          } else if (k<6) {
-            var_type=(*xyz_mom)[lar_pos][vtx_pos][k-3];
-          } else if (k==6) {
-            var_type=sqrt(pow((*xyz_mom)[lar_pos][vtx_pos][0],2)+pow((*xyz_mom)[lar_pos][vtx_pos][1],2)
-              +pow((*xyz_mom)[lar_pos][vtx_pos][2],2));
-          }
+          if (k<3) var_type=(*xyz_pos)[lar_pos][vtx_pos][k];
+          else if (k<6) var_type=(*xyz_mom)[lar_pos][vtx_pos][k-3];
+          else if (k==6) var_type=sqrt(pow((*xyz_mom)[lar_pos][vtx_pos][0],2)+pow((*xyz_mom)[lar_pos][vtx_pos][1],2)+pow((*xyz_mom)[lar_pos][vtx_pos][2],2));
           //if (k==1) {cout<<var_type<<" ";}
           vector<vector<double>>* eff_value=sel.eff_value;
           vector<vector<double>>& eff_value2=*eff_value;
-          double geo_eff;
-          if (vtx_pos==3)
-          {
-            geo_eff=(eff_value2[lar_pos][0]+eff_value2[lar_pos][1]+eff_value2[lar_pos][2]+eff_value2[lar_pos][3]+eff_value2[lar_pos][4]+eff_value2[lar_pos][5])/6.;
-          } else if (vtx_pos==19) {
-            geo_eff=(eff_value2[lar_pos][21]+eff_value2[lar_pos][20]+eff_value2[lar_pos][19]+eff_value2[lar_pos][18]+eff_value2[lar_pos][17]+eff_value2[lar_pos][16])/6.;
+          double geo_eff=eff_value2[lar_pos][vtx_pos];
+          if (geo_eff>1.) {cout<<"efficiency of event "<<i<<" at position "<<LAr_position[lar_pos]<<", "<<vertex_position[vtx_pos]<<" is "<<geo_eff<<endl;}
+          if (geo_eff<=0.1) {
+            continue;
           } else {
-            geo_eff=eff_value2[lar_pos][vtx_pos];
+            hist1->Fill(var_type);
+            hist2->Fill(var_type, geo_eff);
           }
-          if (geo_eff>1.) {
-            cout<<"efficiency of event "<<i<<" at position "<<LAr_position[lar_pos]<<", "
-            <<vertex_position[vtx_pos]<<" is "<<geo_eff<<endl;
-          }
-          hist1->Fill(var_type);
-          hist2->Fill(var_type, geo_eff);
         }
       }
       k++;
@@ -210,7 +196,7 @@ void FD_selection_cuts()
       hist1->Draw("samehist");
 
       float max1=hist1->GetMaximum();
-      //hist2->SetAxisRange(lowerbound,upperbound,"X");
+      hist2->SetAxisRange(lowerbound,upperbound,"X");
       hist2->SetAxisRange(0.,1.16*max1,"Y");
       hist2->SetTitle(Form("%s %s Selection Cut", fd, dt));
       hist2->GetXaxis()->SetTitle(fd);
@@ -234,8 +220,8 @@ void FD_selection_cuts()
     r->Update();
     i_select++;
   }
-  c->SaveAs("/home/barwu/repos/MuonEffNN/images/new_FD_62877585_hists_all_less_outer_positions.png");
-  r->SaveAs("/home/barwu/repos/MuonEffNN/images/new_FD_62877585_hists_ratios_less_outer_positions.png");
+  c->SaveAs("/home/barwu/repos/MuonEffNN/images/new_FD_62877585_.1_eff_veto_cut_hists_all.png");
+  r->SaveAs("/home/barwu/repos/MuonEffNN/images/new_FD_62877585_.1_eff_veto_cut_hists_ratios.png");
 
   TCanvas *cs[5];
   TCanvas *rs[5];
@@ -262,7 +248,7 @@ void FD_selection_cuts()
       hist1->Draw("samehist");
 
       float max1=hist1->GetMaximum();
-      //hist2->SetAxisRange(lowerbound,upperbound,"X");
+      hist2->SetAxisRange(lowerbound,upperbound,"X");
       hist2->SetAxisRange(0.,1.16*max1,"Y");
       hist2->SetTitle(Form("%s %s Selection Cut", fd, dt));
       hist2->GetXaxis()->SetTitle(fd);
@@ -283,8 +269,8 @@ void FD_selection_cuts()
     }
     cs[i-1]->Update();
     rs[i-1]->Update();
-    cs[i-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/new_FD_62877585_%s_hists_less_outer_positions.png", dt));
-    rs[i-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/new_FD_62877585_%s_hists_ratios_less_outer_positions.png", dt));
+    cs[i-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/FD_62877585_%s_.1_eff_veto_cut_hists.png", dt));
+    rs[i-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/FD_62877585_%s_.1_eff_veto_cut_hists_ratios.png", dt));
     i++;
   }
 }
