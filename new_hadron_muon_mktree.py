@@ -277,8 +277,7 @@ def processFiles(f):
                 this_p = phi_rot.apply(this_p)
 
                 # Features contains randomized momentum and vertex, ready to be used in neural network.
-                features = np.column_stack((this_p[:,0], this_p[:,1], this_p[:,2],
-                                            throw_x, throw_y, throw_z))
+                features = np.column_stack((this_p[:,0], this_p[:,1], this_p[:,2],throw_x, throw_y, throw_z))
                 # Convert to Pytorch tensor
                 features = torch.as_tensor(features).type(torch.FloatTensor)
 

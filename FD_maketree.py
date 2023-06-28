@@ -147,10 +147,8 @@ def processFiles(f):
                 # print(throwsFD["throwVtxY"][0]-offset[1])
                 # print(throwsFD["throwVtxZ"][0]-offset[2])
                 # print(throws_FV)
-                if FV_cut: #Count how many throws were in the FV. Will be useful later.
-                    NthrowsInFV=sum(throws_FV)
-                else: #If you don't use the FV, then all throws should be included. 
-                    NthrowsInFV=4096 #There are 64*64=4096 throws in total. 
+                if FV_cut: NthrowsInFV=sum(throws_FV) #Count how many throws were in the FV. Will be useful later.
+                else: NthrowsInFV=4096 #If you don't use the FV, then all throws should be included. #There are 64*64=4096 throws in total.
                 if NthrowsInFV==0 and FV_cut:
                     effs.back().push_back(-1.)
                     effs_tracker.back().push_back(-1.)

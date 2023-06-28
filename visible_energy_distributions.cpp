@@ -151,9 +151,9 @@ void visible_energy_distributions()
       char *fd=item.field;
       double l=item.l;
       double h=item.h;
-      histograms[0][m]=new TH1D(Form("h1_%s_%s", fd, dt), Form("raw %s %s",fd, dt), 100, l, h);
-      histograms[1][m]=new TH1D(Form("h2_%s_%s", fd, dt), Form("selected %s %s",fd, dt), 100, l, h);
-      histograms[2][m]=new TH1D(Form("h3_%s_%s", fd, dt), Form("geo corrected %s %s",fd, dt), 100, l, h);
+      histograms[0][m]=new TH1D(Form("h1_%s_%s", fd, dt), Form("raw %s %s",fd, dt), 300, l, h);
+      histograms[1][m]=new TH1D(Form("h2_%s_%s", fd, dt), Form("selected %s %s",fd, dt), 300, l, h);
+      histograms[2][m]=new TH1D(Form("h3_%s_%s", fd, dt), Form("geo corrected %s %s",fd, dt), 300, l, h);
       m++;
     }
   }

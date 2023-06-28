@@ -97,7 +97,7 @@ void populate_histograms(char* eff,char* CAF,vector<TH1D*>hists1,vector<TH1D*>hi
   Long64_t nentries1=caf->GetEntries();
   Long64_t nentries2=event_data->GetEntries();
   if (nentries1!=nentries2) {cout<<"The efficiency file "<<eff<<" has "<<nentries2<<" events, and the CAF file "<<CAF<<" has "<<nentries1<<" events."<<endl;}
-  // return;
+  //return;
   for (int i=0;i<nentries2;i++) {
     caf->GetEntry(i);
     event_data->GetEntry(i);
@@ -124,14 +124,12 @@ void populate_histograms(char* eff,char* CAF,vector<TH1D*>hists1,vector<TH1D*>hi
         TH1D* hist2=hists2.at(n);
         TH1D* hist3=hists3.at(n);
 	      n++;
-        i_pr++;
-        if (i_pr!=8) continue;
         hist1->Fill(*item.field_value);
-        hist2->Fill(*item.field_value,*sel.sel_value);
-	      double geo_eff=*sel.eff_value;
-        if (geo_eff<=0.0001) {
+        double geo_eff=*sel.eff_value;
+        if (geo_eff<=0.01) {
 	        continue;
 	      } else {
+	        hist2->Fill(*item.field_value,*sel.sel_value);
 	        hist3->Fill(*item.field_value,*sel.sel_value/geo_eff);
 	      }
       }
@@ -155,15 +153,15 @@ void new_hist_fill()
       char *fd=item.field;
       double l=item.l;
       double h=item.h;
-      histograms1.push_back(new TH1D(Form("h1_%s_%s", fd, dt), Form("raw %s %s",fd, dt), 100, l, h));
-      histograms2.push_back(new TH1D(Form("h2_%s_%s", fd, dt), Form("selected %s %s",fd, dt), 100, l, h));
-      histograms3.push_back(new TH1D(Form("h3_%s_%s", fd, dt), Form("geo corrected %s %s",fd, dt), 100, l, h));
+      histograms1.push_back(new TH1D(Form("h1_%s_%s", fd, dt), Form("raw %s %s",fd, dt), 200, l, h));
+      histograms2.push_back(new TH1D(Form("h2_%s_%s", fd, dt), Form("selected %s %s",fd, dt), 200, l, h));
+      histograms3.push_back(new TH1D(Form("h3_%s_%s", fd, dt), Form("geo corrected %s %s",fd, dt), 200, l, h));
     }
   }
 
-  const float directory_number=0; // Sometimes the directory # is an integer, sometimes its a fraction. Remember to change the wildcard and variable type accordingly.
+  const float directory_number=0; //Sometimes the directory # is an integer, sometimes its a fraction. Remember to change the wildcard and variable type accordingly.
   cout<<directory_number<<endl;
-  for (int j=0; j<30000; j++)
+  for (int j=15000; j<16000; j++)
   {
     memset(eff, 0, 99); //clear array each time
     memset(caf, 0, 99); 
@@ -183,77 +181,72 @@ void new_hist_fill()
   }
 
   gROOT->SetBatch(kFALSE);
-  gStyle->SetOptStat(000000000);
-  //gStyle->SetOptStat(111111111);
-  // TCanvas *c=new TCanvas("c", "c", 1800, 1000);
-  // c->Divide(9,5);
-  // int n=0;
-  // for(auto sel:br)
-  // {
-  //   const char *dt=sel.sel_name;
-  //   for(int k=0;k<9;k++)
-  //   {
-  //     Para item=pr[k];
-  //     const char *fd=item.field;
-  //     const char *var_unit=item.units;
-  //     TVirtualPad *pad=c->cd(n+1);
-  //     if (k%9==7) {pad->SetLogy();} //pad needs to be made logarithmic, not canvas
-  //     TH1D *hist3=histograms3.at(n);
-  //     hist3->SetLineColor(kBlue);
-  //     hist3->Draw("histS");
-  //     TH1D *hist2=histograms2.at(n);
-  //     //hist2->SetLineColor(kGreen);
-  //     hist2->SetLineColor(kTeal+10);
-  //     hist2->Draw("samehistS");
-  //     TH1D *hist1=histograms1.at(n);
-  //     hist1->SetLineColor(kPink);
-  //     hist1->Draw("samehistS");
-
-  //     float max1=hist1->GetMaximum();
-  //     float max2=hist2->GetMaximum();
-  //     float max3=hist3->GetMaximum();
-  //     float upper_y_bound=max(max(max2,max3), max1)*1.4;
-  //     if (k%9!=7) {hist3->SetAxisRange(0.,upper_y_bound,"Y");}
-  //     //else {hist3->SetAxisRange(0.1,upper_y_bound,"Y");}
-  //     hist3->SetTitle(Form("%s: %s",fd,dt));
-  //     hist3->GetXaxis()->SetTitle(Form("%s (%s)",fd,var_unit));
-  //     hist3->GetYaxis()->SetTitle("# of events");
-  //     TLegend *leg=new TLegend(0.1,0.77,0.4,0.9);
-  //     leg->SetHeader("comparison"); 
-  //     leg->AddEntry(hist1, "raw distribution");
-  //     leg->AddEntry(hist2, "selection-cut distribution");
-  //     leg->AddEntry(hist3, "geo corrected distribution");
-  //     leg->Draw();
-  //     gPad->Update();
-  //     // TPaveStats *ps;
-  //     // ps=(TPaveStats*)hist3->GetListOfFunctions()->FindObject("stats");
-  //     // ps->SetFillStyle(0); 
-  //     n++;
-  //   }
-  // }
-  // c->Update();
-  // c->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/0m_PRISM_all_1file.png"));
-
-  TCanvas *cs[5];
+  // gStyle->SetOptStat(000000000);
+  gStyle->SetOptStat(111111111);
+  TCanvas *c=new TCanvas("200c", "200c", 1800, 1000);
+  c->Divide(9,5);
   int n=0;
-  int i=0;
   for(auto sel:br)
   {
-    cs[i]=new TCanvas(Form("c%01d",i+1),Form("c%01d",i+1),1800,1000);
-    //cs[i]->Divide(3,3);
     const char *dt=sel.sel_name;
     for(int k=0;k<9;k++)
     {
-      if (k!=7)
-      {
-        n++;
-        continue;
-      }
       Para item=pr[k];
       const char *fd=item.field;
       const char *var_unit=item.units;
-      //TVirtualPad *p=cs[i]->cd(k+1);
-      cs[i]->SetLogy(); //pad needs to be made logarithmic, not canvas //if (k==7) {p->SetLogy();}
+      TVirtualPad *pad=c->cd(n+1);
+      if (k%9==7) {pad->SetLogy();} //pad needs to be made logarithmic, not canvas
+      TH1D *hist3=histograms3.at(n);
+      hist3->SetLineColor(kBlue);
+      hist3->Draw("histS");
+      TH1D *hist2=histograms2.at(n);
+      //hist2->SetLineColor(kGreen);
+      hist2->SetLineColor(kTeal+10);
+      hist2->Draw("samehistS");
+      TH1D *hist1=histograms1.at(n);
+      hist1->SetLineColor(kPink);
+      hist1->Draw("samehistS");
+
+      float max1=hist1->GetMaximum();
+      float max2=hist2->GetMaximum();
+      float max3=hist3->GetMaximum();
+      float upper_y_bound=max(max(max2,max3), max1)*1.4;
+      if (k%9!=7) {hist3->SetAxisRange(0.,upper_y_bound,"Y");}
+      //else {hist3->SetAxisRange(0.1,upper_y_bound,"Y");}
+      hist3->SetTitle(Form("%s: %s",fd,dt));
+      hist3->GetXaxis()->SetTitle(Form("%s (%s)",fd,var_unit));
+      hist3->GetYaxis()->SetTitle("# of events");
+      TLegend *leg=new TLegend(0.1,0.77,0.4,0.9);
+      leg->SetHeader("comparison"); 
+      leg->AddEntry(hist1, "raw distribution");
+      leg->AddEntry(hist2, "selection-cut distribution");
+      leg->AddEntry(hist3, "geo corrected distribution");
+      leg->Draw();
+      gPad->Update();
+      TPaveStats *ps;
+      ps=(TPaveStats*)hist3->GetListOfFunctions()->FindObject("stats");
+      ps->SetFillStyle(0);
+      n++;
+    }
+  }
+  c->Update();
+  // c->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/new_0m_PRISM_all_0.01_eff_veto_cut_small-set.png"));
+
+  TCanvas *cs[5];
+  n=0;
+  int i=0;
+  for(auto sel:br)
+  {
+    cs[i]=new TCanvas(Form("200c%01d",i+1),Form("200c%01d",i+1),1800,1000);
+    cs[i]->Divide(3,3);
+    const char *dt=sel.sel_name;
+    for(int k=0;k<9;k++)
+    {
+      Para item=pr[k];
+      const char *fd=item.field;
+      const char *var_unit=item.units;
+      TVirtualPad *p=cs[i]->cd(k+1);
+      if (k==7) {p->SetLogy();} //pad needs to be made logarithmic, not canvas
       TH1D *hist3=histograms3.at(n);
       hist3->SetLineColor(kBlue);
       hist3->Draw("histS");
@@ -274,20 +267,20 @@ void new_hist_fill()
       hist3->SetTitle(Form("%s: %s",fd,dt));
       hist3->GetXaxis()->SetTitle(Form("%s (%s)",fd,var_unit));
       hist3->GetYaxis()->SetTitle("# of events");
-      // TLegend *leg=new TLegend(0.1,0.75,0.33,0.9);
-      // leg->SetHeader("comparison"); 
-      // leg->AddEntry(hist1, "raw distribution");
-      // leg->AddEntry(hist2, "selection-cut distribution");
-      // leg->AddEntry(hist3, "geo corrected distribution");
-      // leg->Draw();
-      // gPad->Update();
-      // TPaveStats *ps;
-      // ps=(TPaveStats*)hist1->GetListOfFunctions()->FindObject("stats");
-      // ps->SetFillStyle(0);
+      TLegend *leg=new TLegend(0.1,0.75,0.33,0.9);
+      leg->SetHeader("comparison"); 
+      leg->AddEntry(hist1, "raw distribution");
+      leg->AddEntry(hist2, "selection-cut distribution");
+      leg->AddEntry(hist3, "geo corrected distribution");
+      leg->Draw();
+      gPad->Update();
+      TPaveStats *ps;
+      ps=(TPaveStats*)hist3->GetListOfFunctions()->FindObject("stats");
+      ps->SetFillStyle(0);
       n++;
     }
     cs[i]->Update();
-    cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/0m_PRISM_%s_angle_hists.png",dt));
+    // cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/new_0m_PRISM_%s_0.01_eff_veto_cut_small-set.png",dt));
     i++;
   }
 }

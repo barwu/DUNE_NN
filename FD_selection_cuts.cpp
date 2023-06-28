@@ -25,8 +25,8 @@ double LAr_position[NUM_LAR_DTR]={-2800.,-2575.,-2400.,-2175.,-2000.,-1775.,-160
 double vertex_position[NUM_VTX]={-299.,-292.,-285.,-278.,-271.,-264.,-216.,-168.,-120.,-72.,-24.,24.,72.,120.,168.,216.,264.,271.,278.,285.,292.,299.};
 double total_detected[5][NUM_LAR_DTR][NUM_VTX]={};
 //float scale[30]={.19,.18,.18,.7,.7,1.05,.04,.034,.034,.07,.07,.07,.23,.21,.21,.73,.65,1.05,1.,1.,1.,1.05,1.05,1.05,.23,.2,.2,.7,.7,1.};
-float scale[45]={.64,.56,.56,1.05,1.05,1.05,1.05,1.,1.,.85,.51,.51,1.05,.7,.75,.7,.7,.7,.8,.54,.54,1.05,.8,1.05,1.05,1.,1.,1.,1.,1.,1.05,1.05,1.05,1.05,1.05,1.05,
-                .75,.5,.5,1.05,.75,1.05,1.05,1.,1.};
+float scale[45]={.64,.56,.56,1.05,1.05,1.,1.05,1.05,1.,.82,.51,.51,1.05,.7,.75,.7,.7,.7,.75,.52,.52,1.05,.75,1.,1.05,1.05,1.,1.,1.,1.,1.05,1.05,1.05,1.05,1.05,1.05,
+                .75,.5,.5,1.05,.75,.9,1.,1.05,1.};
 
 struct Para
 {
@@ -117,10 +117,10 @@ void populate_histograms(char* eff,char* caf,vector<vector<TH1D*>>& hists1,vecto
           vector<vector<double>>& eff_value2=*eff_value;
           double geo_eff=eff_value2[lar_pos][vtx_pos];
           if (geo_eff>1.) {cout<<"efficiency of event "<<i<<" at position "<<LAr_position[lar_pos]<<", "<<vertex_position[vtx_pos]<<" is "<<geo_eff<<endl;}
+          hist1->Fill(var_type);
           if (geo_eff<=0.1) {
             continue;
           } else {
-            hist1->Fill(var_type);
             hist2->Fill(var_type, geo_eff);
           }
         }
@@ -149,8 +149,8 @@ void FD_selection_cuts()
     {
       double lowerbound=item.l;
       double upperbound=item.h;
-      histograms1.back().push_back(new TH1D(Form("%s_hist_%d",dt,i), Form("raw %s  %d", dt, i), 300, lowerbound, upperbound));
-      histograms2.back().push_back(new TH1D(Form("%s_hist_%d",dt,i), Form("selected %s %d", dt, i), 300, lowerbound, upperbound));
+      histograms1.back().push_back(new TH1D(Form("%s_hist_%d",dt,i), Form("raw %s  %d", dt, i), 200, lowerbound, upperbound));
+      histograms2.back().push_back(new TH1D(Form("%s_hist_%d",dt,i), Form("selected %s %d", dt, i), 200, lowerbound, upperbound));
     i++;
     }
   }

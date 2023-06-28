@@ -107,11 +107,11 @@ void draw_histograms()
     }
   }
 
-  //gStyle->SetOptStat(000000000);
-  gStyle->SetOptStat(111111111);
-  TCanvas *c=new TCanvas("c", "c", 1800, 1000);
+  gStyle->SetOptStat(000000000);
+  //gStyle->SetOptStat(111111111);
+  TCanvas *c=new TCanvas("c", "all graphs", 1800, 1000);
   c->Divide(9,5);
-  TCanvas *r=new TCanvas("r", "r", 1800, 1000);
+  TCanvas *r=new TCanvas("r", "all ratios", 1800, 1000);
   r->Divide(9,5);
   index=0;
   for(auto sel:br)
@@ -140,10 +140,10 @@ void draw_histograms()
       float max1=hist1->GetMaximum();
       float max2=hist2->GetMaximum();
       float max3=hist3->GetMaximum();
-      float upper_y_bound=max(max(max2,max3), max1)*1.4;
+      float upper_y_bound=max(max(max2,max3), max1)*1.25;
       hist3->SetAxisRange(lowerbound,upperbound,"X");
       if (k%9!=7) {hist3->SetAxisRange(0.,upper_y_bound,"Y");}
-      //else {hist3->SetAxisRange(0.1,upper_y_bound,"Y");}
+      else {hist3->SetAxisRange(0.1,max1,"Y");}
       hist3->SetTitle(Form("%s: %s",fd,dt));
       hist3->GetXaxis()->SetTitle(Form("%s (%s)",fd,var_unit));
       hist3->GetYaxis()->SetTitle("# of events");
@@ -154,17 +154,31 @@ void draw_histograms()
       leg->AddEntry(hist3, "geo corrected distribution");
       leg->Draw();
       gPad->Update();
-      TPaveStats *ps;
-      ps=(TPaveStats*)hist3->GetListOfFunctions()->FindObject("stats");
-      ps->SetFillStyle(0);
+      // TPaveStats *ps;
+      // ps=(TPaveStats*)hist3->GetListOfFunctions()->FindObject("stats");
+      // ps->SetFillStyle(0);
       
       r->cd(index+1);
-      TH1D *rplot=(TH1D*)hist2->Clone();
-      rplot->Divide(hist1);
-      rplot->SetAxisRange(lowerbound,upperbound,"X");
-      rplot->SetAxisRange(0.,1.,"Y");
-      rplot->SetLineColor(kBlue);
-      rplot->Draw("hist");
+      TH1D *rplot1=(TH1D*)hist3->Clone();
+      rplot1->Divide(hist1);
+      rplot1->SetAxisRange(lowerbound,upperbound,"X");
+      rplot1->SetAxisRange(0.,1.7,"Y");
+      rplot1->SetLineColor(kViolet-3);
+      rplot1->Draw("hist");
+      TH1D *rplot2=(TH1D*)hist2->Clone();
+      rplot2->Divide(hist1);
+      rplot2->SetLineColor(kOrange+7);
+      rplot2->Draw("samehist");
+      TH1D *rplot3=(TH1D*)hist2->Clone();
+      rplot3->Divide(hist3);
+      rplot3->SetLineColor(kCyan);
+      rplot3->Draw("samehist");
+      // TLegend *rleg=new TLegend(0.1,0.77,0.4,0.9);
+      // rleg->SetHeader("comparison"); 
+      // rleg->AddEntry(rplot1, "geo vs raw");
+      // rleg->AddEntry(rplot2, "sel vs raw");
+      // rleg->AddEntry(rplot3, "sel vs geo");
+      // rleg->Draw();
       // TPaveStats *prs;
       // prs=(TPaveStats*)rplot->GetListOfFunctions()->FindObject("stats");
       // prs->SetFillStyle(0);
@@ -172,9 +186,9 @@ void draw_histograms()
     }
   }
   c->Update();
-  c->SaveAs("/home/barwu/repos/MuonEffNN/images/0m_PRISM_0.01_eff_veto_cut_hists_all.pdf");
+  c->SaveAs("/home/barwu/repos/MuonEffNN/images/0m_PRISM_0.1_eff_veto_cut_all_hists_200_bins.png");
   r->Update();
-  r->SaveAs("/home/barwu/repos/MuonEffNN/images/0m_PRISM_hists_0.01_eff_veto_cut_all_ratios.pdf");
+  r->SaveAs("/home/barwu/repos/MuonEffNN/images/0m_PRISM_0.1_eff_veto_cut_all_hists_200_bins_ratios.png");
 
   TCanvas *cs[5];
   TCanvas *rs[5];
@@ -182,11 +196,11 @@ void draw_histograms()
   int i=0;
   for(auto sel:br)
   {
-    cs[i]=new TCanvas(Form("c%01d",i+1),Form("c%01d",i+1),1800,1000);
-    cs[i]->Divide(3,3);
-    rs[i]=new TCanvas(Form("r%01d",i+1),Form("r%01d",i+1),1800,1000);
-    rs[i]->Divide(3,3);
     const char *dt=sel.sel_name;
+    cs[i]=new TCanvas(Form("c%01d",i+1),dt,1800,1000);
+    cs[i]->Divide(3,3);
+    rs[i]=new TCanvas(Form("r%01d",i+1),Form("%s ratios",dt),1800,1000);
+    rs[i]->Divide(3,3);
     for(int k=0;k<9;k++)
     {
       Para item=pr[k];
@@ -210,10 +224,10 @@ void draw_histograms()
       float max1=hist1->GetMaximum();
       float max2=hist2->GetMaximum();
       float max3=hist3->GetMaximum();
-      float upper_y_bound=max(max(max2,max3), max1)*1.35;
+      float upper_y_bound=max(max(max2,max3), max1)*1.1;
       hist3->SetAxisRange(lowerbound,upperbound,"X");
       if (k!=7) hist3->SetAxisRange(0.,upper_y_bound,"Y");
-      //else hist3->SetAxisRange(0.1,upper_y_bound,"Y");
+      else hist3->SetAxisRange(10,max1,"Y");
       hist3->SetTitle(Form("%s: %s",fd,dt));
       hist3->GetXaxis()->SetTitle(Form("%s (%s)",fd,var_unit));
       hist3->GetYaxis()->SetTitle("# of events");
@@ -224,26 +238,40 @@ void draw_histograms()
       leg->AddEntry(hist3, "geo corrected distribution");
       leg->Draw();
       gPad->Update();
-      TPaveStats *ps;
-      ps=(TPaveStats*)hist3->GetListOfFunctions()->FindObject("stats");
-      ps->SetFillStyle(0);
+      // TPaveStats *ps;
+      // ps=(TPaveStats*)hist3->GetListOfFunctions()->FindObject("stats");
+      // ps->SetFillStyle(0);
 
       rs[i]->cd(k+1);
-      TH1D *rplot=(TH1D*)hist2->Clone();
-      rplot->Divide(hist1);
-      rplot->SetAxisRange(lowerbound,upperbound,"X");
-      rplot->SetAxisRange(0.,1.,"Y");
-      rplot->SetLineColor(kBlue);
-      rplot->Draw("hist");
+      TH1D *rplot1=(TH1D*)hist3->Clone();
+      rplot1->Divide(hist1);
+      rplot1->SetAxisRange(lowerbound,upperbound,"X");
+      rplot1->SetAxisRange(0.,1.7,"Y");
+      rplot1->SetLineColor(kViolet-3);
+      rplot1->Draw("hist");
+      TH1D *rplot2=(TH1D*)hist2->Clone();
+      rplot2->Divide(hist1);
+      rplot2->SetLineColor(kOrange+7);
+      rplot2->Draw("samehist");
+      TH1D *rplot3=(TH1D*)hist2->Clone();
+      rplot3->Divide(hist3);
+      rplot3->SetLineColor(kCyan);
+      rplot3->Draw("samehist");
+      // TLegend *rleg=new TLegend(0.1,0.77,0.4,0.9);
+      // rleg->SetHeader("comparison"); 
+      // rleg->AddEntry(rplot1, "geo vs raw");
+      // rleg->AddEntry(rplot2, "sel vs raw");
+      // rleg->AddEntry(rplot3, "sel vs geo");
+      // rleg->Draw();
       // TPaveStats *prs;
       // prs=(TPaveStats*)rplot->GetListOfFunctions()->FindObject("stats");
       // prs->SetFillStyle(0);
       index++;
     }
     cs[i]->Update();
-    cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/0m_%s_PRISM_0.01_eff_veto_cut_hists.pdf",dt));
+    cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/0m_%s_PRISM_0.1_eff_veto_cut_hists_200_bins.png",dt));
     rs[i]->Update();
-    rs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/0m_%s_PRISM_0.01_eff_veto_cut_hists_ratios.pdf",dt));
+    rs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/0m_%s_PRISM_0.1_eff_veto_cut_hists_200_bins_ratios.png",dt));;
     i++;
   }
 }
