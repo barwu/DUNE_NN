@@ -22,7 +22,6 @@ struct Para
   //const char *LMX="LepMomX", *LMY="LepMomY", *LMZ="LepMomZ";
   char field[20];
   const char* units;
-  bool iscaf;
   double l;
   double h;
   double* field_value;
@@ -32,42 +31,44 @@ struct Sel_type
 {
   const char* sel_name;
   const char* eff_name;
-  bool calced=false;
   int* sel_value;
   double* eff_value;
   Sel_type() {}
-  Sel_type(const char* sn, const char* en, bool c, int* sv, double* ev)
-  :sel_name(sn),eff_name(en),calced(c),sel_value(sv),eff_value(ev) {}
+  Sel_type(const char* sn, const char* en, int* sv, double* ev)
+  :sel_name(sn),eff_name(en),sel_value(sv),eff_value(ev) {}
 };
 
 int muon_cont, muon_tra, muon_sel, hadr, comb;
 double muon_cont_eff, muon_tra_eff, muon_sel_eff, hadr_eff, comb_eff;
 double x_pos, y_pos, z_pos, XLepMom, YLepMom, ZLepMom;
 double TotalMom, cos_angle, LongitudinalMom;
+double e_vis_true, ev;
 const char* list_of_directories[40]={"0mgsimple","0m","1.75m","2m","4m","5.75m","8m","9.75m","12m","13.75m","16m","17.75m","20m","21.75m","24m","25.75m","26.75m","28m",
 "28.25m","28.5m","0mgsimpleRHC","0mRHC","1.75mRHC","2mRHC","4mRHC","5.75mRHC","8mRHC","9.75mRHC","12mRHC","13.75mRHC","16mRHC","17.75mRHC","20mRHC","21.75mRHC","24mRHC",
 "25.75mRHC","26.75mRHC","28mRHC","28.25mRHC","28.5mRHC"};
 
 Para pr[]= //position is in units of cm, momentum is in units of GeV/c, angle is in units of rad, and energy is in  units of GeV
 { //match the x-ranges with the FD histograms' x-ranges
-  {"vtx_x", "cm", true, -300., 300., &x_pos},
-  {"vtx_y", "cm", true, -100., 100., &y_pos},
-  {"vtx_z", "cm", true, 50., 350., &z_pos},
-  {"LepMomX", "GeV", true, -2., 2., &XLepMom},
-  {"LepMomY", "GeV", true, -4.5, 2., &YLepMom},
-  {"LepMomZ", "GeV", true, -0.5, 7., &ZLepMom},
-  {"TotMom", "GeV", false, 0., 7., &TotalMom},
-  {"cos_LepNuAngle", "", false, 0., 1., &cos_angle},
-  {"LongMom", "GeV", false, -1., 7., &LongitudinalMom}
+  {"vtx_x", "cm", -300., 300., &x_pos},
+  //{"vtx_y", "cm", -100., 100., &y_pos},
+  //{"vtx_z", "cm", 50., 350., &z_pos},
+  {"LepMomX", "GeV", -2., 2., &XLepMom},
+  {"LepMomY", "GeV", -4.5, 2., &YLepMom},
+  {"LepMomZ", "GeV", -0.5, 7., &ZLepMom},
+  {"TotMom", "GeV", 0., 7., &TotalMom},
+  {"cos_LepNuAngle", "", 0., 1., &cos_angle},
+  {"LongMom", "GeV", -1., 7., &LongitudinalMom},
+  {"E_vis_true", "GeV", 0., 10., &e_vis_true},
+  {"Ev", "GeV", 0., 10., &ev}
 };
 
 vector<Sel_type> br=
 {
-  Sel_type("muon_contained", "muon_contained_eff", false, &muon_cont, &muon_cont_eff),
-  Sel_type("muon_tracker", "muon_tracker_eff", false, &muon_tra, &muon_tra_eff),
-  Sel_type("muon_selected", "muon_sel_eff", true, &muon_sel, &muon_sel_eff),
-  Sel_type("hadron_selected", "hadron_selected_eff", false, &hadr, &hadr_eff ),
-  Sel_type("combined", "combined_eff", false, &comb, &comb_eff)
+  Sel_type("muon_contained", "muon_contained_eff", &muon_cont, &muon_cont_eff),
+  Sel_type("muon_tracker", "muon_tracker_eff", &muon_tra, &muon_tra_eff),
+  Sel_type("muon_selected", "muon_sel_eff", &muon_sel, &muon_sel_eff),
+  Sel_type("hadron_selected", "hadron_selected_eff", &hadr, &hadr_eff ),
+  Sel_type("combined", "combined_eff", &comb, &comb_eff)
 };
 
 void draw_histograms()
@@ -173,12 +174,12 @@ void draw_histograms()
       rplot3->Divide(hist3);
       rplot3->SetLineColor(kCyan);
       rplot3->Draw("samehist");
-      // TLegend *rleg=new TLegend(0.1,0.77,0.4,0.9);
-      // rleg->SetHeader("comparison"); 
-      // rleg->AddEntry(rplot1, "geo vs raw");
-      // rleg->AddEntry(rplot2, "sel vs raw");
-      // rleg->AddEntry(rplot3, "sel vs geo");
-      // rleg->Draw();
+      TLegend *rleg=new TLegend(0.1,0.77,0.4,0.9);
+      rleg->SetHeader("comparison"); 
+      rleg->AddEntry(rplot1, "geo vs raw");
+      rleg->AddEntry(rplot2, "sel vs raw");
+      rleg->AddEntry(rplot3, "sel vs geo");
+      rleg->Draw();
       // TPaveStats *prs;
       // prs=(TPaveStats*)rplot->GetListOfFunctions()->FindObject("stats");
       // prs->SetFillStyle(0);
@@ -186,9 +187,9 @@ void draw_histograms()
     }
   }
   c->Update();
-  c->SaveAs("/home/barwu/repos/MuonEffNN/images/0m_PRISM_0.1_eff_veto_cut_all_hists_200_bins.png");
+  c->SaveAs("/home/barwu/repos/MuonEffNN/images/new_0m_PRISM_0.1_eff_veto_cut_all_hists_200_bins.png");
   r->Update();
-  r->SaveAs("/home/barwu/repos/MuonEffNN/images/0m_PRISM_0.1_eff_veto_cut_all_hists_200_bins_ratios.png");
+  r->SaveAs("/home/barwu/repos/MuonEffNN/images/new_0m_PRISM_0.1_eff_veto_cut_all_hists_200_bins_ratios.png");
 
   TCanvas *cs[5];
   TCanvas *rs[5];
@@ -257,21 +258,21 @@ void draw_histograms()
       rplot3->Divide(hist3);
       rplot3->SetLineColor(kCyan);
       rplot3->Draw("samehist");
-      // TLegend *rleg=new TLegend(0.1,0.77,0.4,0.9);
-      // rleg->SetHeader("comparison"); 
-      // rleg->AddEntry(rplot1, "geo vs raw");
-      // rleg->AddEntry(rplot2, "sel vs raw");
-      // rleg->AddEntry(rplot3, "sel vs geo");
-      // rleg->Draw();
+      TLegend *rleg=new TLegend(0.1,0.77,0.4,0.9);
+      rleg->SetHeader("comparison"); 
+      rleg->AddEntry(rplot1, "geo vs raw");
+      rleg->AddEntry(rplot2, "sel vs raw");
+      rleg->AddEntry(rplot3, "sel vs geo");
+      rleg->Draw();
       // TPaveStats *prs;
       // prs=(TPaveStats*)rplot->GetListOfFunctions()->FindObject("stats");
       // prs->SetFillStyle(0);
       index++;
     }
     cs[i]->Update();
-    cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/0m_%s_PRISM_0.1_eff_veto_cut_hists_200_bins.png",dt));
+    cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/new_0m_%s_PRISM_0.1_eff_veto_cut_hists_200_bins.png",dt));
     rs[i]->Update();
-    rs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/0m_%s_PRISM_0.1_eff_veto_cut_hists_200_bins_ratios.png",dt));;
+    rs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/new_0m_%s_PRISM_0.1_eff_veto_cut_hists_200_bins_ratios.png",dt));;
     i++;
   }
 }

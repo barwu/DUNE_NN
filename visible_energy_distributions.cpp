@@ -77,6 +77,7 @@ void populate_histograms(char* eff,char* CAF,TH1D* hists[3][10],int j)
   caf->SetBranchAddress("LepE", &LepE);
   caf->SetBranchAddress("eP", &eP);
   caf->SetBranchAddress("ePip", &ePip);
+  caf->SetBranchAddress("ePim", &ePim);
   caf->SetBranchAddress("ePi0", &ePi0);
   caf->SetBranchAddress("eOther", &eOther);
   caf->SetBranchAddress("nipi0", &nipi0);

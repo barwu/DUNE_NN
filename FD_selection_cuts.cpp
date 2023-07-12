@@ -112,7 +112,6 @@ void populate_histograms(char* eff,char* caf,vector<vector<TH1D*>>& hists1,vecto
           if (k<3) var_type=(*xyz_pos)[lar_pos][vtx_pos][k];
           else if (k<6) var_type=(*xyz_mom)[lar_pos][vtx_pos][k-3];
           else if (k==6) var_type=sqrt(pow((*xyz_mom)[lar_pos][vtx_pos][0],2)+pow((*xyz_mom)[lar_pos][vtx_pos][1],2)+pow((*xyz_mom)[lar_pos][vtx_pos][2],2));
-          //if (k==1) {cout<<var_type<<" ";}
           vector<vector<double>>* eff_value=sel.eff_value;
           vector<vector<double>>& eff_value2=*eff_value;
           double geo_eff=eff_value2[lar_pos][vtx_pos];
@@ -157,7 +156,7 @@ void FD_selection_cuts()
 
   for (int j=0; j<10; j++)
   {
-    memset(eff, 0, 99); // clear array each time
+    memset(eff, 0, 99); //clear array each time
     memset(caf, 0, 99);
     sprintf(eff, "/storage/shared/barwu/10thTry/FDEff_old5/FDGeoEff_62877585_99%d_Eff.root", j);
     sprintf(caf, "/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_99%d.root", j);
