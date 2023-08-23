@@ -25,8 +25,7 @@ double LAr_position[NUM_LAR_DTR]={-2800.,-2575.,-2400.,-2175.,-2000.,-1775.,-160
 double vertex_position[NUM_VTX]={-299.,-292.,-285.,-278.,-271.,-264.,-216.,-168.,-120.,-72.,-24.,24.,72.,120.,168.,216.,264.,271.,278.,285.,292.,299.};
 double total_detected[5][NUM_LAR_DTR][NUM_VTX]={};
 //float scale[30]={.19,.18,.18,.7,.7,1.05,.04,.034,.034,.07,.07,.07,.23,.21,.21,.73,.65,1.05,1.,1.,1.,1.05,1.05,1.05,.23,.2,.2,.7,.7,1.};
-float scale[45]={.64,.56,.56,1.05,1.05,1.,1.05,1.05,1.,.82,.51,.51,1.05,.7,.75,.7,.7,.7,.75,.52,.52,1.05,.75,1.,1.05,1.05,1.,1.,1.,1.,1.05,1.05,1.05,1.05,1.05,1.05,
-                .75,.5,.5,1.05,.75,.9,1.,1.05,1.};
+float scale[35]={.14,.12,.12,.16,.14,.14,.14,.36,.24,.24,.38,.27,.27,.25,.5,.35,.35,.54,.4,.38,.38,.6,.56,.56,1.05,1.05,1.05,1.05,.3,.19,.19,.54,.37,.37,.37};
 
 struct Para
 {
@@ -44,14 +43,14 @@ Para pr[]= //position is in units of cm, momentum is in units of GeV/c, angle is
   {"vtx_x", -300., 300.},
   {"vtx_y", 5.385, 5.39},
   {"vtx_z",  659.995, 660.005},
-  {"LepMomX", -2., 2.},
-  {"LepMomY", -4.5, 2.},
-  {"LepMomZ", -0.5, 7.},
-  {"LepMomTot", 0., 7.},
+  {"LepMomX", -0.6, 0.4},
+  {"LepMomY", -0.8, 0.4},
+  {"LepMomZ", 0., 7.},
+  {"LepMomTot", 0., 7.}
   //{"cos_LepNuAngle", 0., 1.}
   //{"LongMom", 0., 7.}
-  {"ND_Gen_numu_E", 0., 10.},
-  {"ND_E_vis_true", 0., 10.}
+  //{"ND_Gen_numu_E", 0., 10.},
+  //{"ND_E_vis_true", 0., 10.}
 };
 
 struct sel_type
@@ -73,22 +72,19 @@ vector<sel_type> br=
   sel_type("combined", "combined_eff")
 };
 
-void populate_histograms(char* eff,char* caf,vector<vector<TH1D*>>& hists1,vector<vector<TH1D*>>& hists2,int j)
+void populate_histograms(char* eff,char* caf,vector<vector<TH1D*>>& hists1,vector<vector<TH1D*>>& hists2)
 {
   TFile eff_file(eff);
   TFile caf_file(caf);
   TTree *event_data=(TTree*)eff_file.Get("event_data");
-  TTree *thing=(TTree*)caf_file.Get("effTreeND");
+  TTree *thing=(TTree*)caf_file.Get("throwResults");
   //gSystem->Exec("rm -f AutoDict*vector*vector*vector*double*");
   gInterpreter->GenerateDictionary("vector<vector<vector<double>>>", "vector");
-  for(auto& sel:br) //efficiencies are in 3d array, but energy is in 1d array
-  {
-    event_data->SetBranchAddress(sel.eff_name, &(sel.eff_value));
-  }
-  thing->SetBranchAddress("ND_OffAxis_Sim_mu_start_v_xyz_LAr", &xyz_pos);
-  thing->SetBranchAddress("ND_OffAxis_Sim_mu_start_p_xyz_LAr", &xyz_mom);
-  thing->SetBranchAddress("ND_Gen_numu_E", &numu_e);
-  thing->SetBranchAddress("ND_E_vis_true", &e_vis_true);
+  for(auto& sel:br) event_data->SetBranchAddress(sel.eff_name, &(sel.eff_value)); //efficiencies are in 3d array, but energy is in 1d array
+  thing->SetBranchAddress("FD_evt_NDLAr_OffAxis_Sim_lep_start_v", &xyz_pos);
+  thing->SetBranchAddress("FD_evt_NDLAr_OffAxis_Sim_lep_start_p", &xyz_mom);
+  //thing->SetBranchAddress("ND_Gen_numu_E", &numu_e);
+  //thing->SetBranchAddress("ND_E_vis_true", &e_vis_true);
 
   Long64_t nentries1=event_data->GetEntries();
   Long64_t nentries2=thing->GetEntries();
@@ -100,8 +96,8 @@ void populate_histograms(char* eff,char* caf,vector<vector<TH1D*>>& hists1,vecto
     int k=0;
     for (Para item:pr) {
       double var_type=0.0;
-      if (k==7) {var_type=numu_e;}
-      if (k==8) {var_type=e_vis_true;}
+      //if (k==7) {var_type=numu_e;}
+      //if (k==8) {var_type=e_vis_true;}
 
       for (unsigned long vtx_pos=0;vtx_pos<NUM_VTX;vtx_pos++) {
 	      int n=0;
@@ -111,13 +107,13 @@ void populate_histograms(char* eff,char* caf,vector<vector<TH1D*>>& hists1,vecto
           n++;
           if (k<3) var_type=(*xyz_pos)[lar_pos][vtx_pos][k];
           else if (k<6) var_type=(*xyz_mom)[lar_pos][vtx_pos][k-3];
-          else if (k==6) var_type=sqrt(pow((*xyz_mom)[lar_pos][vtx_pos][0],2)+pow((*xyz_mom)[lar_pos][vtx_pos][1],2)+pow((*xyz_mom)[lar_pos][vtx_pos][2],2));
+          else if (k==6) {var_type=sqrt(pow((*xyz_mom)[lar_pos][vtx_pos][0],2)+pow((*xyz_mom)[lar_pos][vtx_pos][1],2)+pow((*xyz_mom)[lar_pos][vtx_pos][2],2));cout<<var_type<<endl;}
           vector<vector<double>>* eff_value=sel.eff_value;
           vector<vector<double>>& eff_value2=*eff_value;
           double geo_eff=eff_value2[lar_pos][vtx_pos];
           if (geo_eff>1.) {cout<<"efficiency of event "<<i<<" at position "<<LAr_position[lar_pos]<<", "<<vertex_position[vtx_pos]<<" is "<<geo_eff<<endl;}
           hist1->Fill(var_type);
-          if (geo_eff<=0.1) {
+          if (geo_eff<=0.001) {
             continue;
           } else {
             hist2->Fill(var_type, geo_eff);
@@ -148,33 +144,33 @@ void FD_selection_cuts()
     {
       double lowerbound=item.l;
       double upperbound=item.h;
-      histograms1.back().push_back(new TH1D(Form("%s_hist_%d",dt,i), Form("raw %s  %d", dt, i), 200, lowerbound, upperbound));
+      histograms1.back().push_back(new TH1D(Form("%s_hist_%d",dt,i), Form("raw %s %d", dt, i), 200, lowerbound, upperbound));
       histograms2.back().push_back(new TH1D(Form("%s_hist_%d",dt,i), Form("selected %s %d", dt, i), 200, lowerbound, upperbound));
     i++;
     }
   }
 
-  for (int j=0; j<10; j++)
+  for (int i=1; i<11; i++)
   {
     memset(eff, 0, 99); //clear array each time
     memset(caf, 0, 99);
-    sprintf(eff, "/storage/shared/barwu/10thTry/FDEff_old5/FDGeoEff_62877585_99%d_Eff.root", j);
-    sprintf(caf, "/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_99%d.root", j);
+    sprintf(eff, "/storage/shared/barwu/FDCAFIntegrationEffFiles/legacy/caf_legacy_%d_Eff.root", i);
+    sprintf(caf, "/storage/shared/barwu/10thTry/FDCAFIntegration4GEC/legacy/caf_legacy_%d.root", i);
     if(access(eff, 0)==0)
     {
-      populate_histograms(eff,caf,histograms1,histograms2,j);
+      populate_histograms(eff,caf,histograms1,histograms2);
     } else {
-      cout<<"Warning: missing file:"<<eff<<endl;
+      cout<<"Error reading file "<<eff<<endl;
       continue;
     }
   }
 
-  gStyle->SetOptStat(000000000);
-  //gStyle->SetOptStat(111111111);
+  //gStyle->SetOptStat(000000000);
+  gStyle->SetOptStat(111111111);
   TCanvas *c=new TCanvas("c","FD-in-ND all graphs",2000,1000);
   TCanvas *r=new TCanvas("r","Ratio Plots",2000,1000);
-  c->Divide(9,5);
-  r->Divide(9,5);
+  c->Divide(7,5);
+  r->Divide(7,5);
   int i=1;
   int i_select=0;
   for (auto& sel:br)
@@ -219,8 +215,8 @@ void FD_selection_cuts()
     r->Update();
     i_select++;
   }
-  c->SaveAs("/home/barwu/repos/MuonEffNN/images/new_FD_62877585_.1_eff_veto_cut_hists_all.png");
-  r->SaveAs("/home/barwu/repos/MuonEffNN/images/new_FD_62877585_.1_eff_veto_cut_hists_ratios.png");
+  c->SaveAs("/home/barwu/repos/MuonEffNN/images/FDinND_legacy_all_hists.png");
+  r->SaveAs("/home/barwu/repos/MuonEffNN/images/FDinND_legacy_all_hists_ratios.png");
 
   TCanvas *cs[5];
   TCanvas *rs[5];
@@ -229,9 +225,9 @@ void FD_selection_cuts()
   {
     const char *dt=sel.sel_name;
     cs[i-1]=new TCanvas(Form("c%01d",i),dt,2000,1000);
-    cs[i-1]->Divide(3,3);
+    cs[i-1]->Divide(4,2);
     rs[i-1]=new TCanvas(Form("r%01d",i),dt,2000,1000);
-    rs[i-1]->Divide(3,3);
+    rs[i-1]->Divide(4,2);
     int n=0;
     for(Para& item:pr)
     {
@@ -261,15 +257,15 @@ void FD_selection_cuts()
       rs[i-1]->cd(n+1);
       TH1D *rplot=(TH1D*)hist2->Clone();
       rplot->Divide(hist1);
-      rplot->SetAxisRange(0.,scale[(i-1)*9+n],"Y");
+      rplot->SetAxisRange(0.,scale[(i-1)*7+n],"Y");
       rplot->SetLineColor(kBlue);
       rplot->Draw("hist");
       n++;
     }
     cs[i-1]->Update();
     rs[i-1]->Update();
-    cs[i-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/FD_62877585_%s_.1_eff_veto_cut_hists.png", dt));
-    rs[i-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/FD_62877585_%s_.1_eff_veto_cut_hists_ratios.png", dt));
+    cs[i-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/FDinND_legacy_%s_hists.png", dt));
+    rs[i-1]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/FDinND_legacy_%s_hists_ratios.png", dt));
     i++;
   }
 }

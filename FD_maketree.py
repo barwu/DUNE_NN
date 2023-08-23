@@ -13,7 +13,7 @@ import numpy as np
 from glob import glob
 import torch
 from muonEffModel import muonEffModel
-from os.path import splitext, basename#, exists
+from os.path import splitext, basename, exists
 from scipy.spatial.transform import Rotation as R
 from scipy.interpolate import interp1d
 #from ROOT import TGraph
@@ -22,7 +22,7 @@ from array import array
 from multiprocessing import Pool
 
 # SET NUMBER OF PROCESSORS HERE
-NUM_PROCS=30
+NUM_PROCS=50
 # ND coordinate offset.
 offset=[0.,5.5,411.]
 # Average neutrino decay position in beam coordinates as a function of vertex x (from Luke):
@@ -69,16 +69,16 @@ TreeVars=["ND_OffAxis_Sim_mu_start_v_xyz_LAr", "ND_OffAxis_Sim_mu_start_p_xyz_LA
 def processFiles(f):
     #output="/storage/shared/barwu/FDCAFIntegration4GEC_wei/"+splitext(basename(f))[0]+"_Eff.root"
     #output="/storage/shared/barwu/10thTry/FDEff/"+splitext(basename(f))[0]+"_Eff.root"
-    output="/storage/shared/barwu/FDEffs_1760931/"+splitext(basename(f))[0]+"_Eff.root"
-    # if exists(output)==True:
-    #      print("file already exists")
-    #      return None
+    output="/storage/shared/barwu/FDEff_2811722/"+splitext(basename(f))[0]+"_Eff.root"
+    if exists(output)==True:
+         print("file already exists")
+         return None
     try:
         # Get CAF TTree
         # GeoEffThrows=concatenate("{0}:GeoEffThrows".format(f), TreeVars, library="np")
         # cafTree=concatenate("{0}:cafTree;1".format(f), ["LepNuAngle"], library="np")
         FD_sim_Results=concatenate("{0}:effTreeND".format(f), TreeVars, library="np")
-        throwsFD=concatenate("{0}:ThrowsFD".format(f), ['throwVtxY', 'throwVtxZ', 'throwRot'], library = "np")
+        throwsFD=concatenate("{0}:ThrowsFD".format(f), ['throwVtxY', 'throwVtxZ', 'throwRot'], library="np")
     #leave except condition specification so that code crashes when there is another exception condition
     except exceptions.KeyInFileError as err:
         print("Couldn't find caf TTree in file {0} for {1}. Skipping.".format(f, err))
@@ -310,8 +310,8 @@ if __name__=="__main__":
     #hadron_file="/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_99?.root"
     #hadron_file="/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_*.root"
     #hadron_file="/storage/shared/barwu/10thTry/FDGeoEffinND/FDGeoEff_524238_*.root"
-    #hadron_file="/storage/shared/barwu/FDGeoEff_1760931/caf_*.root"
-    hadron_file="/storage/shared/barwu/FDGeoEff_1760931/FDGeoEff_1760931_*.root"
+    #hadron_file="/storage/shared/barwu/FDGeoEff_1760931/FDGeoEff_1760931_*.root"
+    hadron_file="/storage/shared/barwu/FDGeoEff_2811722/FDGeoEff_2811722_*.root"
     allFiles=glob(hadron_file)
     #if len(allFiles)<NUM_PROCS:
         #print("Fewer files than processes, setting NUM_PROC to {0}".format(len(allFiles)))

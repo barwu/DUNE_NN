@@ -94,14 +94,14 @@ void draw_histograms()
       const char *fd=item.field;
       if (index<9)
       {
-        sprintf(raw_path,"/storage/shared/barwu/10thTry/0m_histograms/0.1_eff_veto_cut/%s/raw_%s.root",fd,fd);
+        sprintf(raw_path,"/storage/shared/barwu/10thTry/0m_histograms/0.005_eff_veto_cut/%s/raw_%s.root",fd,fd);
         raw_files[int(index)]=new TFile(raw_path, "read");
         raw_histograms[int(index)]=(TH1D*)raw_files[int(index)]->Get(Form("raw_%s",fd));
       }
-      sprintf(sel_path,"/storage/shared/barwu/10thTry/0m_histograms/0.1_eff_veto_cut/%s/selection-cut_%s_%s.root",fd,dt,fd);
+      sprintf(sel_path,"/storage/shared/barwu/10thTry/0m_histograms/0.005_eff_veto_cut/%s/selection-cut_%s_%s.root",fd,dt,fd);
       sel_files[index]=new TFile(sel_path, "read");
       sel_histograms[index]=(TH1D*)sel_files[index]->Get(Form("selection-cut_%s_%s",dt,fd));
-      sprintf(geo_path,"/storage/shared/barwu/10thTry/0m_histograms/0.1_eff_veto_cut/%s/geo-corrected_%s_%s.root",fd,dt,fd);
+      sprintf(geo_path,"/storage/shared/barwu/10thTry/0m_histograms/0.005_eff_veto_cut/%s/geo-corrected_%s_%s.root",fd,dt,fd);
       geo_files[index]=new TFile(geo_path, "read");
       geo_histograms[index]=(TH1D*)geo_files[index]->Get(Form("geo-corrected_%s_%s",dt,fd));
       index++;
@@ -126,7 +126,7 @@ void draw_histograms()
       const char *fd=item.field;
       const char *var_unit=item.units;
       TVirtualPad *pad=c->cd(index+1);
-      if (k%9==7) {pad->SetLogy();} //pad needs to be made logarithmic, not canvas
+      if (k%9==5) {pad->SetLogy();} //pad needs to be made logarithmic, not canvas
       TH1D *hist3=geo_histograms[index];
       hist3->SetLineColor(kBlue);
       hist3->Draw("histS");
@@ -143,7 +143,7 @@ void draw_histograms()
       float max3=hist3->GetMaximum();
       float upper_y_bound=max(max(max2,max3), max1)*1.25;
       hist3->SetAxisRange(lowerbound,upperbound,"X");
-      if (k%9!=7) {hist3->SetAxisRange(0.,upper_y_bound,"Y");}
+      if (k%9!=5) {hist3->SetAxisRange(0.,upper_y_bound,"Y");}
       else {hist3->SetAxisRange(0.1,max1,"Y");}
       hist3->SetTitle(Form("%s: %s",fd,dt));
       hist3->GetXaxis()->SetTitle(Form("%s (%s)",fd,var_unit));
@@ -187,9 +187,9 @@ void draw_histograms()
     }
   }
   c->Update();
-  c->SaveAs("/home/barwu/repos/MuonEffNN/images/new_0m_PRISM_0.1_eff_veto_cut_all_hists_200_bins.png");
+  c->SaveAs("/home/barwu/repos/MuonEffNN/images/new_0m_PRISM_0.005_eff_veto_cut_all_hists_200_bins.png");
   r->Update();
-  r->SaveAs("/home/barwu/repos/MuonEffNN/images/new_0m_PRISM_0.1_eff_veto_cut_all_hists_200_bins_ratios.png");
+  r->SaveAs("/home/barwu/repos/MuonEffNN/images/new_0m_PRISM_0.005_eff_veto_cut_all_hists_200_bins_ratios.png");
 
   TCanvas *cs[5];
   TCanvas *rs[5];
@@ -198,9 +198,9 @@ void draw_histograms()
   for(auto sel:br)
   {
     const char *dt=sel.sel_name;
-    cs[i]=new TCanvas(Form("c%01d",i+1),dt,1800,1000);
+    cs[i]=new TCanvas(Form("c%01d",i+1),dt,2000,1000);
     cs[i]->Divide(3,3);
-    rs[i]=new TCanvas(Form("r%01d",i+1),Form("%s ratios",dt),1800,1000);
+    rs[i]=new TCanvas(Form("r%01d",i+1),Form("%s ratios",dt),2000,1000);
     rs[i]->Divide(3,3);
     for(int k=0;k<9;k++)
     {
@@ -210,7 +210,7 @@ void draw_histograms()
       const char *fd=item.field;
       const char *var_unit=item.units;
       TVirtualPad *p=cs[i]->cd(k+1);
-      if (k==7) {p->SetLogy();} //pad needs to be made logarithmic, not canvas
+      if (k==5) {p->SetLogy();} //pad needs to be made logarithmic, not canvas
       TH1D *hist3=geo_histograms[index];
       hist3->SetLineColor(kBlue);
       hist3->Draw("histS");
@@ -227,7 +227,7 @@ void draw_histograms()
       float max3=hist3->GetMaximum();
       float upper_y_bound=max(max(max2,max3), max1)*1.1;
       hist3->SetAxisRange(lowerbound,upperbound,"X");
-      if (k!=7) hist3->SetAxisRange(0.,upper_y_bound,"Y");
+      if (k!=5) hist3->SetAxisRange(0.,upper_y_bound,"Y");
       else hist3->SetAxisRange(10,max1,"Y");
       hist3->SetTitle(Form("%s: %s",fd,dt));
       hist3->GetXaxis()->SetTitle(Form("%s (%s)",fd,var_unit));
@@ -270,9 +270,9 @@ void draw_histograms()
       index++;
     }
     cs[i]->Update();
-    cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/new_0m_%s_PRISM_0.1_eff_veto_cut_hists_200_bins.png",dt));
+    cs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/new_0m_%s_PRISM_0.005_eff_veto_cut_hists_200_bins.png",dt));
     rs[i]->Update();
-    rs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/new_0m_%s_PRISM_0.1_eff_veto_cut_hists_200_bins_ratios.png",dt));;
+    rs[i]->SaveAs(Form("/home/barwu/repos/MuonEffNN/images/new_0m_%s_PRISM_0.005_eff_veto_cut_hists_200_bins_ratios.png",dt));
     i++;
   }
 }

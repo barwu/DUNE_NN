@@ -19,7 +19,7 @@ from scipy.interpolate import interp1d
 #from ROOT import TGraph
 from array import array
 #The code is currently quite slow, so it uses multiprocessing to speed things up
-from multiprocessing import Pool
+#from multiprocessing import Pool
 
 # SET NUMBER OF PROCESSORS HERE
 NUM_PROCS=25
@@ -69,7 +69,7 @@ TreeVars=["FD_evt_NDLAr_OffAxis_Sim_lep_start_v", "FD_evt_NDLAr_OffAxis_Sim_lep_
 def processFiles(f):
     #output="/storage/shared/barwu/FDCAFIntegration4GEC_wei/"+splitext(basename(f))[0]+"_Eff.root"
     #output="/storage/shared/barwu/10thTry/FDEff/"+splitext(basename(f))[0]+"_Eff.root"
-    output="/storage/shared/barwu/FDCAF_wei/eff_"+splitext(basename(f))[0]+".root"
+    output="./eff_"+splitext(basename(f))[0]+".root"
     # if exists(output)==True:
     #      print("file already exists")
     #      return None
@@ -77,8 +77,8 @@ def processFiles(f):
         # Get CAF TTree
         # GeoEffThrows=concatenate("{0}:GeoEffThrows".format(f), TreeVars, library="np")
         # cafTree=concatenate("{0}:cafTree;1".format(f), ["LepNuAngle"], library="np")
-        FD_sim_Results=concatenate("{0}:throwResults".format(f), TreeVars, library="np")
-        throwsFD=concatenate("{0}:geoEffThrows".format(f), ['throwVtxY', 'throwVtxZ', 'throwRot'], library = "np")
+        FD_sim_Results=concatenate("{0}:cafmaker/throwResults".format(f), TreeVars, library="np")
+        throwsFD=concatenate("{0}:cafmaker/geoEffThrows".format(f), ['throwVtxY', 'throwVtxZ', 'throwRot'], library = "np")
     #leave except condition specification so that code crashes when there is another exception condition
     except exceptions.KeyInFileError as err:
         print("Couldn't find caf TTree in file {0} for {1}. Skipping.".format(f, err))
@@ -119,6 +119,7 @@ def processFiles(f):
             # print(effValues['ND_LAr_dtctr_pos'][det_pos])
             # print("det_pos=",end="")
             # print(det_pos)
+            print(len(event))
 
             effs.push_back(std.vector('double')())
             effs_tracker.push_back(std.vector('double')())
@@ -311,7 +312,7 @@ if __name__=="__main__":
     #hadron_file="/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_99?.root"
     #hadron_file="/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_*.root"
     #hadron_file="/storage/shared/barwu/10thTry/FDGeoEffinND/FDGeoEff_524238_*.root"
-    hadron_file="/storage/shared/barwu/10thTry/FDCAFIntegration4GEC_splitfiles/[1-5]_p?.root"
+    hadron_file="./caf_legacy_10.root"
     #more_files="/storage/shared/barwu/10thTry/FDCAFIntegration4GEC_splitfiles/10_p?.root"
     allFiles=glob(hadron_file)
     #allFiles+=glob(more_files)
@@ -321,7 +322,7 @@ if __name__=="__main__":
     #filesPerProc=int(np.ceil(float(len(allFiles))/NUM_PROCS))
     #print(filesPerProc, NUM_PROCS)
 
-    pool=Pool(NUM_PROCS) #don't use multiprocessing for debugging
-    pool.map(processFiles, allFiles)
+    #pool=Pool(NUM_PROCS) #don't use multiprocessing for debugging
+    #pool.map(processFiles, allFiles)
     #for file in allFiles: processFiles(file)
-    #processFiles(hadron_file)
+    processFiles(hadron_file)
