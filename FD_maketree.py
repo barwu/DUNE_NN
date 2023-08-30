@@ -20,6 +20,7 @@ from scipy.interpolate import interp1d
 from array import array
 #The code is currently quite slow, so it uses multiprocessing to speed things up
 from multiprocessing import Pool
+from sys import argv
 
 # SET NUMBER OF PROCESSORS HERE
 NUM_PROCS=50
@@ -311,7 +312,7 @@ if __name__=="__main__":
     #hadron_file="/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_*.root"
     #hadron_file="/storage/shared/barwu/10thTry/FDGeoEffinND/FDGeoEff_524238_*.root"
     #hadron_file="/storage/shared/barwu/FDGeoEff_1760931/FDGeoEff_1760931_*.root"
-    hadron_file="/storage/shared/barwu/FDGeoEff_2811722/FDGeoEff_2811722_*.root"
+    hadron_file="/storage/shared/barwu/10thTry/FDGeoEff_2811722/FDGeoEff_2811722_"+argv[1]+"*.root"
     allFiles=glob(hadron_file)
     #if len(allFiles)<NUM_PROCS:
         #print("Fewer files than processes, setting NUM_PROC to {0}".format(len(allFiles)))
