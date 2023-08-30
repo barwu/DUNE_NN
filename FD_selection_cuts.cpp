@@ -25,7 +25,7 @@ double LAr_position[NUM_LAR_DTR]={-2800.,-2575.,-2400.,-2175.,-2000.,-1775.,-160
 double vertex_position[NUM_VTX]={-299.,-292.,-285.,-278.,-271.,-264.,-216.,-168.,-120.,-72.,-24.,24.,72.,120.,168.,216.,264.,271.,278.,285.,292.,299.};
 double total_detected[5][NUM_LAR_DTR][NUM_VTX]={};
 //float scale[30]={.19,.18,.18,.7,.7,1.05,.04,.034,.034,.07,.07,.07,.23,.21,.21,.73,.65,1.05,1.,1.,1.,1.05,1.05,1.05,.23,.2,.2,.7,.7,1.};
-float scale[35]={.14,.12,.12,.16,.14,.14,.14,.36,.24,.24,.38,.27,.27,.25,.5,.35,.35,.54,.4,.38,.38,.6,.56,.56,1.05,1.05,1.05,1.05,.3,.19,.19,.54,.37,.37,.37};
+float scale[35]={.14,.12,.12,.75,.95,.95,1.05,.36,.24,.24,.66,.7,.7,.7,.5,.35,.35,.95,.95,.95,1.05,.8,.75,.75,.95,1.05,1.05,1.05,.35,.22,.22,.75,.7,.7,.84};
 
 struct Para
 {
@@ -77,7 +77,7 @@ void populate_histograms(char* eff,char* caf,vector<vector<TH1D*>>& hists1,vecto
   TFile eff_file(eff);
   TFile caf_file(caf);
   TTree *event_data=(TTree*)eff_file.Get("event_data");
-  TTree *thing=(TTree*)caf_file.Get("throwResults");
+  TTree *thing=(TTree*)caf_file.Get("cafmaker/throwResults");
   //gSystem->Exec("rm -f AutoDict*vector*vector*vector*double*");
   gInterpreter->GenerateDictionary("vector<vector<vector<double>>>", "vector");
   for(auto& sel:br) event_data->SetBranchAddress(sel.eff_name, &(sel.eff_value)); //efficiencies are in 3d array, but energy is in 1d array
@@ -107,7 +107,7 @@ void populate_histograms(char* eff,char* caf,vector<vector<TH1D*>>& hists1,vecto
           n++;
           if (k<3) var_type=(*xyz_pos)[lar_pos][vtx_pos][k];
           else if (k<6) var_type=(*xyz_mom)[lar_pos][vtx_pos][k-3];
-          else if (k==6) {var_type=sqrt(pow((*xyz_mom)[lar_pos][vtx_pos][0],2)+pow((*xyz_mom)[lar_pos][vtx_pos][1],2)+pow((*xyz_mom)[lar_pos][vtx_pos][2],2));cout<<var_type<<endl;}
+          else if (k==6) var_type=sqrt(pow((*xyz_mom)[lar_pos][vtx_pos][0],2)+pow((*xyz_mom)[lar_pos][vtx_pos][1],2)+pow((*xyz_mom)[lar_pos][vtx_pos][2],2));
           vector<vector<double>>* eff_value=sel.eff_value;
           vector<vector<double>>& eff_value2=*eff_value;
           double geo_eff=eff_value2[lar_pos][vtx_pos];
