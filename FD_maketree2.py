@@ -41,7 +41,7 @@ beamLineRotation=-0.101
 # Fiducial volume definition
 def isFV(x, y, z):
     inDeadRegion=False
-    for i in [-3, -2, -1, 0, 1, 2, 3] :
+    for i in [-3, -2, -1, 0, 1, 2, 3]:
         cathode_center=i*102.1
         if (x>cathode_center-0.75) and (x<cathode_center+0.75):inDeadRegion=True 
         module_boundary=i*102.1+51.05
@@ -158,6 +158,7 @@ def processFiles(f):
                     effs.back().push_back(-1.)
                     effs_tracker.back().push_back(-1.)
                     effs_contained.back().push_back(-1.)
+                    effs_selected.back().push_back(-1)
                     effs_combined.back().push_back(-1.)
                     continue
 

@@ -42,7 +42,7 @@ beamLineRotation=-0.101
 # Fiducial volume definition
 def isFV(x, y, z):
     inDeadRegion=False
-    for i in [-3, -2, -1, 0, 1, 2, 3] :
+    for i in [-3, -2, -1, 0, 1, 2, 3]:
         cathode_center=i*102.1
         if (x>cathode_center-0.75) and (x<cathode_center+0.75):inDeadRegion=True 
         module_boundary=i*102.1+51.05
@@ -53,9 +53,9 @@ def isFV(x, y, z):
     return (abs(x)<300) and (abs(y)<100) and (z>50) and (z<350) and (not inDeadRegion)
 
 # Vectorize fiducial volume function
-isFV_vec = np.vectorize(isFV)
+isFV_vec=np.vectorize(isFV)
 # Simple muon containment cut
-def isContained(x, y, z) :
+def isContained(x, y, z):
     if abs(x)>350:return False
     if abs(y)>150:return False
     if z<0 or z>500:return False
@@ -71,9 +71,9 @@ def processFiles(f):
     #output="/storage/shared/barwu/FDCAFIntegration4GEC_wei/"+splitext(basename(f))[0]+"_Eff.root"
     #output="/storage/shared/barwu/10thTry/FDEff/"+splitext(basename(f))[0]+"_Eff.root"
     output="/storage/shared/barwu/FDEff_2811722/"+splitext(basename(f))[0]+"_Eff.root"
-    if exists(output)==True:
-         print("file already exists")
-         return None
+    # if exists(output)==True:
+    #      print("file already exists")
+    #      return None
     try:
         # Get CAF TTree
         # GeoEffThrows=concatenate("{0}:GeoEffThrows".format(f), TreeVars, library="np")
@@ -155,6 +155,7 @@ def processFiles(f):
                     effs.back().push_back(-1.)
                     effs_tracker.back().push_back(-1.)
                     effs_contained.back().push_back(-1.)
+                    effs_selected.back().push_back(-1)
                     effs_combined.back().push_back(-1.)
                     continue
 
@@ -229,8 +230,8 @@ def processFiles(f):
                     # Features contains randomized momentum and vertex, to be used in neural network.
                     features=np.column_stack((this_p[:,0], this_p[:,1], this_p[:,2], throw_x, throw_y, throw_z))
                     features=torch.as_tensor(features).type(torch.FloatTensor) # Convert to Pytorch tensor
-                    with torch.no_grad(): # Evaluate neural network #neural network output is 2D array of probability a set of events being contained-detected, tracker-detected,
-                        netOut=net(features) # or not detected #I don't use the 3rd column (not-detected probability)
+                    with torch.no_grad(): #Evaluate neural network #neural network output is 2D array of probability a set of events being contained-detected, tracker-detected,
+                        netOut=net(features) #or not detected #I don't use the 3rd column (not-detected probability)
                         netOut=torch.nn.functional.softmax(netOut).detach().numpy()
 
                     # Get contained probability for 64 throws
@@ -244,7 +245,6 @@ def processFiles(f):
                     # Combined hadron containment and muon selection efficiency, throw by throw
                     combinedEfficiency=np.add(combinedEfficiencyContained, combinedEfficiencyTracker)
 
-                    
                     if FV_cut: #Count only throws which were in the fiducial volume and add them to the efficiency accumulators
                         thisEff_tracker+=np.sum(np.multiply(nnTracker, throws_FV[i_bitfield*64:(i_bitfield+1)*64]))
                         thisEff_contained+=np.sum(np.multiply(nnContained, throws_FV[i_bitfield*64:(i_bitfield+1)*64]))
@@ -253,7 +253,7 @@ def processFiles(f):
                         thisEff_tracker+=np.sum(nnTracker)
                         thisEff_contained+=np.sum(nnContained)
                         thisEff_combined+=np.sum(combinedEfficiency)
-                        
+
                     #xz_angle=np.arctan(this_p[:,0]/this_p[:,2])
                     #yz_angle=np.arctan(this_p[:,1]/this_p[:,2])
                     # for i in range(64):
@@ -312,7 +312,7 @@ if __name__=="__main__":
     #hadron_file="/storage/shared/fyguo/FDGeoEff_nnhome/FDGeoEff_62877585_*.root"
     #hadron_file="/storage/shared/barwu/10thTry/FDGeoEffinND/FDGeoEff_524238_*.root"
     #hadron_file="/storage/shared/barwu/FDGeoEff_1760931/FDGeoEff_1760931_*.root"
-    hadron_file="/storage/shared/barwu/10thTry/FDGeoEff_2811722/FDGeoEff_2811722_"+argv[1]+"*.root"
+    hadron_file="/storage/shared/barwu/10thTry/FDGeoEff_2811722/FDGeoEff_2811722_*.root"
     allFiles=glob(hadron_file)
     #if len(allFiles)<NUM_PROCS:
         #print("Fewer files than processes, setting NUM_PROC to {0}".format(len(allFiles)))
